@@ -1,20 +1,25 @@
 package com.example.demo.model;
 
 public class Event {
+    private String id;
     private String name;
     private String date;
 
-    // Default constructor (needed by Spring)
-    public Event() {
-    }
+    public Event() {}
 
-    // Constructor for creating an event
     public Event(String name, String date) {
         this.name = name;
         this.date = date;
     }
 
-    // Getters and Setters
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
