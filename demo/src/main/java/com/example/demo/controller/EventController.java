@@ -23,7 +23,6 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    // 🔹 GET - Ottiene tutti gli eventi
     @GetMapping
     @Operation(summary = "Ottieni tutti gli eventi")
     @ApiResponses(value = {
@@ -34,7 +33,6 @@ public class EventController {
         return eventService.getAllEvents();
     }
 
-    // 🔹 POST - Aggiunge un nuovo evento
     @PostMapping
     @Operation(summary = "Aggiungi un nuovo evento")
     @ApiResponses(value = {
@@ -45,7 +43,6 @@ public class EventController {
         return eventService.addEvent(event);
     }
 
-    // 🔹 PUT - Modifica un evento esistente
     @PutMapping("/{id}")
     @Operation(summary = "Aggiorna un evento esistente")
     @ApiResponses(value = {
@@ -56,7 +53,6 @@ public class EventController {
         return eventService.updateEvent(id, updatedEvent);
     }
 
-    // 🔹 DELETE - Cancella un evento
     @DeleteMapping("/{id}")
     @Operation(summary = "Elimina un evento")
     @ApiResponses(value = {
