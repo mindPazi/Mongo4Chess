@@ -9,6 +9,6 @@ class DemoApplicationTests {
 
 	@Test
 	void contextLoads() {
-		// Test che verifica solo il caricamento del contesto senza errori
+
 	}
 }

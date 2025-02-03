@@ -9,7 +9,7 @@ public class EventNeo4j {
 
     @Id
     @GeneratedValue
-    private Long id; // Neo4j usa ID come Long
+    private Long id;
 
     private String nome;
     private String data;
@@ -22,7 +22,6 @@ public class EventNeo4j {
         this.data = data;
     }
 
-    // Getters e Setters
     public Long getId() {
         return id;
     }

@@ -9,13 +9,13 @@ import java.util.UUID;
 public class EventMongoDB {
 
     @Id
-    private String id; // MongoDB usa ID come String (ObjectId)
+    private String id;
 
     private String nome;
     private String data;
 
     public EventMongoDB() {
-        this.id = UUID.randomUUID().toString(); // Genera un UUID per MongoDB
+        this.id = UUID.randomUUID().toString();
     }
 
     public EventMongoDB(String nome, String data) {
@@ -24,7 +24,6 @@ public class EventMongoDB {
         this.data = data;
     }
 
-    // Getters e Setters
     public String getId() {
         return id;
     }

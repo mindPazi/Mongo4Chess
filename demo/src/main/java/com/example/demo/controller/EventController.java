@@ -24,8 +24,6 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    // 🔹 ENDPOINTS PER MONGODB 🔹
-
     @GetMapping("/mongo")
     @Operation(summary = "Ottieni tutti gli eventi da MongoDB")
     @ApiResponses(value = {
@@ -65,8 +63,6 @@ public class EventController {
     public void deleteEventMongo(@PathVariable String id) {
         eventService.deleteEventFromMongo(id);
     }
-
-    // 🔹 ENDPOINTS PER NEO4J 🔹
 
     @GetMapping("/neo4j")
     @Operation(summary = "Ottieni tutti gli eventi da Neo4j")
