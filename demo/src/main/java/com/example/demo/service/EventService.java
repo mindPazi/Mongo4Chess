@@ -1,39 +1,70 @@
 package com.example.demo.service;
 
-import com.example.demo.model.Event;
+import com.example.demo.model.EventMongoDB;
+import com.example.demo.model.EventNeo4j;
+import com.example.demo.repository.mongo.EventMongoDBRepository;
+import com.example.demo.repository.neo4j.EventNeo4jRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @Service
 public class EventService {
 
-    private final Map<String, Event> events = new HashMap<>();
+    @Autowired
+    private EventMongoDBRepository eventMongoDBRepository;
 
-    public List<Event> getAllEvents() {
-        return new ArrayList<>(events.values());
+    @Autowired
+    private EventNeo4jRepository eventNeo4jRepository;
+
+    // 🔹 Metodi per MongoDB 🔹
+    public List<EventMongoDB> getAllEventsFromMongo() {
+        return eventMongoDBRepository.findAll();
     }
 
-    public Event addEvent(Event event) {
-        String id = UUID.randomUUID().toString();
-        event.setId(id);
-        events.put(id, event);
-        return event;
+    public EventMongoDB addEventToMongo(EventMongoDB event) {
+        event.setId(UUID.randomUUID().toString()); // Genera un UUID per MongoDB
+        return eventMongoDBRepository.save(event);
     }
 
-    public Event updateEvent(String id, Event updatedEvent) {
-        if (!events.containsKey(id)) {
-            throw new NoSuchElementException("Evento non trovato");
+    public EventMongoDB updateEventInMongo(String id, EventMongoDB updatedEvent) {
+        if (!eventMongoDBRepository.existsById(id)) {
+            throw new NoSuchElementException("Evento non trovato in MongoDB");
         }
         updatedEvent.setId(id);
-        events.put(id, updatedEvent);
-        return updatedEvent;
+        return eventMongoDBRepository.save(updatedEvent);
     }
 
-    public void deleteEvent(String id) {
-        if (!events.containsKey(id)) {
-            throw new NoSuchElementException("Evento non trovato");
+    public void deleteEventFromMongo(String id) {
+        if (!eventMongoDBRepository.existsById(id)) {
+            throw new NoSuchElementException("Evento non trovato in MongoDB");
         }
-        events.remove(id);
+        eventMongoDBRepository.deleteById(id);
+    }
+
+    // 🔹 Metodi per Neo4j 🔹
+    public List<EventNeo4j> getAllEventsFromNeo4j() {
+        return eventNeo4jRepository.findAll();
+    }
+
+    public EventNeo4j addEventToNeo4j(EventNeo4j event) {
+        return eventNeo4jRepository.save(event);
+    }
+
+    public EventNeo4j updateEventInNeo4j(Long id, EventNeo4j updatedEvent) {
+        if (!eventNeo4jRepository.existsById(id)) {
+            throw new NoSuchElementException("Evento non trovato in Neo4j");
+        }
+        updatedEvent.setId(id);
+        return eventNeo4jRepository.save(updatedEvent);
+    }
+
+    public void deleteEventFromNeo4j(Long id) {
+        if (!eventNeo4jRepository.existsById(id)) {
+            throw new NoSuchElementException("Evento non trovato in Neo4j");
+        }
+        eventNeo4jRepository.deleteById(id);
     }
 }

@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.Event;
+import com.example.demo.model.EventMongoDB;
+import com.example.demo.model.EventNeo4j;
 import com.example.demo.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/events")
-@Tag(name = "Event Controller", description = "Gestione eventi")
+@Tag(name = "Event Controller", description = "Gestione eventi su MongoDB e Neo4j")
 public class EventController {
 
     private final EventService eventService;
@@ -23,43 +24,71 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    @GetMapping
-    @Operation(summary = "Ottieni tutti gli eventi")
+    // 🔹 ENDPOINTS PER MONGODB 🔹
+
+    @GetMapping("/mongo")
+    @Operation(summary = "Ottieni tutti gli eventi da MongoDB")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Success"),
             @ApiResponse(responseCode = "500", description = "Internal Server Error")
     })
-    public List<Event> getAllEvents() {
-        return eventService.getAllEvents();
+    public List<EventMongoDB> getAllEventsMongo() {
+        return eventService.getAllEventsFromMongo();
     }
 
-    @PostMapping
-    @Operation(summary = "Aggiungi un nuovo evento")
+    @PostMapping("/mongo")
+    @Operation(summary = "Aggiungi un nuovo evento su MongoDB")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Evento creato con successo"),
             @ApiResponse(responseCode = "400", description = "Richiesta non valida")
     })
-    public Event createEvent(@RequestBody Event event) {
-        return eventService.addEvent(event);
+    public EventMongoDB createEventMongo(@RequestBody EventMongoDB event) {
+        return eventService.addEventToMongo(event);
     }
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Aggiorna un evento esistente")
+    @PutMapping("/mongo/{id}")
+    @Operation(summary = "Aggiorna un evento su MongoDB")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Evento aggiornato"),
             @ApiResponse(responseCode = "404", description = "Evento non trovato")
     })
-    public Event updateEvent(@PathVariable String id, @RequestBody Event updatedEvent) {
-        return eventService.updateEvent(id, updatedEvent);
+    public EventMongoDB updateEventMongo(@PathVariable String id, @RequestBody EventMongoDB updatedEvent) {
+        return eventService.updateEventInMongo(id, updatedEvent);
     }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Elimina un evento")
+    @DeleteMapping("/mongo/{id}")
+    @Operation(summary = "Elimina un evento da MongoDB")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Evento eliminato con successo"),
             @ApiResponse(responseCode = "404", description = "Evento non trovato")
     })
-    public void deleteEvent(@PathVariable String id) {
-        eventService.deleteEvent(id);
+    public void deleteEventMongo(@PathVariable String id) {
+        eventService.deleteEventFromMongo(id);
+    }
+
+    // 🔹 ENDPOINTS PER NEO4J 🔹
+
+    @GetMapping("/neo4j")
+    @Operation(summary = "Ottieni tutti gli eventi da Neo4j")
+    public List<EventNeo4j> getAllEventsNeo4j() {
+        return eventService.getAllEventsFromNeo4j();
+    }
+
+    @PostMapping("/neo4j")
+    @Operation(summary = "Aggiungi un nuovo evento su Neo4j")
+    public EventNeo4j createEventNeo4j(@RequestBody EventNeo4j event) {
+        return eventService.addEventToNeo4j(event);
+    }
+
+    @PutMapping("/neo4j/{id}")
+    @Operation(summary = "Aggiorna un evento su Neo4j")
+    public EventNeo4j updateEventNeo4j(@PathVariable Long id, @RequestBody EventNeo4j updatedEvent) {
+        return eventService.updateEventInNeo4j(id, updatedEvent);
+    }
+
+    @DeleteMapping("/neo4j/{id}")
+    @Operation(summary = "Elimina un evento da Neo4j")
+    public void deleteEventNeo4j(@PathVariable Long id) {
+        eventService.deleteEventFromNeo4j(id);
     }
 }
