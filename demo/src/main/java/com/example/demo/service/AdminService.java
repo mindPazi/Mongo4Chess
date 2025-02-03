@@ -14,13 +14,13 @@ public class AdminService {
         this.adminDAO = adminDAO;
     }
 
-    public String updateAdminUsername(String newUsername) {
-        adminDAO.updateAdminUsername(newUsername);
-        return "Admin username updated to: " + newUsername;
+    public String updateAdminUsername(String oldUsername, String newUsername) {
+        adminDAO.updateAdminUsername(oldUsername, newUsername);
+        return "Admin username updated from: " + oldUsername + " to: " + newUsername;
     }
 
-    public String updateAdminPassword(String newPassword) {
-        adminDAO.updateAdminPassword(newPassword);
-        return "Admin password updated successfully.";
+    public String updateAdminPassword(String username, String newPassword) {
+        adminDAO.updateAdminPassword(username, newPassword);
+        return "Admin password updated successfully for: " + username;
     }
 }
