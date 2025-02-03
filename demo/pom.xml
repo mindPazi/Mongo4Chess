@@ -78,6 +78,12 @@
 			<artifactId>jakarta.el-api</artifactId>
 			<version>5.0.1</version>
 		</dependency>
+		<dependency>
+			<groupId>jakarta.persistence</groupId>
+			<artifactId>jakarta.persistence-api</artifactId>
+			<version>3.1.0</version>			<!-- Assicurati di usare una versione recente -->
+		</dependency>
+
 
 	</dependencies>
 
