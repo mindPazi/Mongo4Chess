@@ -27,6 +27,14 @@ public class Player {
         this.elo = elo;
     }
 
+    public boolean isBanned() {
+        return isBanned;
+    }
+
+    public void setBanned(boolean banned) {
+        isBanned = banned;
+    }
+
     public Player() {
     }
 

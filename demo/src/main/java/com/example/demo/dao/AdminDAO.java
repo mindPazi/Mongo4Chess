@@ -1,5 +1,7 @@
 package com.example.demo.dao;
 
+import com.example.demo.model.Admin;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -14,13 +16,12 @@ import static com.mongodb.client.model.Filters.eq;
 public class AdminDAO {
 
     private final MongoCollection<Document> adminCollection;
-    private final Driver neo4jDriver;
 
     @Autowired
     public AdminDAO(MongoClient mongoClient, Driver neo4jDriver) {
         MongoDatabase database = mongoClient.getDatabase("chessDB");
         this.adminCollection = database.getCollection("AdminCollection");
-        this.neo4jDriver = neo4jDriver;
+
     }
 
     public void updateAdminUsername(String newUsername) {
@@ -29,5 +30,10 @@ public class AdminDAO {
 
     public void updateAdminPassword(String newPassword) {
         adminCollection.updateOne(eq("role", "admin"), new Document("$set", new Document("password", newPassword)));
+    }
+
+    public Admin getAdmin() {
+        Document doc = adminCollection.find(eq("role", "admin")).first();
+        return new Admin(doc.getString("username"), doc.getString("password"));
     }
 }

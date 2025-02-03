@@ -1,32 +1,47 @@
 package com.example.demo.controller;
 
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.service.PlayerService;
 import com.example.demo.service.AdminService;
-
-import java.util.Date;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    @Autowired
+    private final PlayerService playerService;
     private final AdminService adminService;
 
-    @PostMapping("update/username")
+    @DeleteMapping("/delete_player")
+    public ResponseEntity<String> deletePlayer(@RequestBody String username) {
+        playerService.deletePlayer(username);
+        return ResponseEntity.ok("Player " + username + " deleted!");
+    }
+
+    @PostMapping("/ban/player")
+    public ResponseEntity<String> banPlayer(@RequestBody String username) {
+        playerService.banPlayer(username);
+        return ResponseEntity.ok("Player " + username + " banned!");
+    }
+
+    @PostMapping("/unban/player")
+    public ResponseEntity<String> unbanPlayer(@RequestBody String username) {
+        playerService.unBanPlayer(username);
+        return ResponseEntity.ok("Player " + username + " unbanned!");
+    }
+
+    @PostMapping("/update/username")
     public ResponseEntity<String> updateAdminUsername(@RequestBody String username) {
-        return ResponseEntity.ok(adminService.updateAdminUsername(username));
+        adminService.updateAdminUsername(username);
+        return ResponseEntity.ok("Admin username updated!");
     }
 
-    @PostMapping("update/password")
+    @PostMapping("/update/password")
     public ResponseEntity<String> updateAdminPassword(@RequestBody String password) {
-        return ResponseEntity.ok(adminService.updateAdminPassword(password));
-    }
+        adminService.updateAdminPassword(password);
+        return ResponseEntity.ok("Admin password updated!");
 
+    }
 }
