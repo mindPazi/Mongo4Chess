@@ -14,11 +14,13 @@ import static com.mongodb.client.model.Filters.eq;
 public class AdminDAO {
 
     private final MongoCollection<Document> adminCollection;
+    private final MongoCollection<Document> matchCollection;
 
     @Autowired
     public AdminDAO(MongoClient mongoClient) {
         MongoDatabase database = mongoClient.getDatabase("chessDB");
         this.adminCollection = database.getCollection("AdminCollection");
+        this.matchCollection = database.getCollection("MatchCollection");
     }
 
     public void updateAdminUsername(String oldUsername, String newUsername) {
@@ -34,5 +36,9 @@ public class AdminDAO {
     public Admin getAdmin(String username) {
         Document doc = adminCollection.find(eq("username", username)).first();
         return doc != null ? new Admin(doc.getString("username"), doc.getString("password")) : null;
+    }
+
+    public void saveMatch(String match) {
+        matchCollection.insertOne(Document.parse(match));
     }
 }

@@ -83,6 +83,12 @@
 			<artifactId>jakarta.persistence-api</artifactId>
 			<version>3.1.0</version>			<!-- Assicurati di usare una versione recente -->
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+			<version>2.18.2</version>			<!-- Assicurati di usare la stessa versione di jackson-databind -->
+		</dependency>
+
 
 
 

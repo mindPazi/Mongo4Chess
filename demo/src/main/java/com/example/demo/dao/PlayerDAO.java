@@ -1,5 +1,6 @@
 package com.example.demo.dao;
 
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
@@ -9,8 +10,9 @@ import org.springframework.stereotype.Component;
 public class PlayerDAO {
     private final MongoCollection<Document> playerCollection;
 
-    public PlayerDAO(MongoDatabase database) {
-        this.playerCollection = database.getCollection("PlayerCollection");
+    public PlayerDAO(MongoClient mongoclient) {
+        MongoDatabase mongodatabase = mongoclient.getDatabase("chessDB");
+        this.playerCollection = mongodatabase.getCollection("PlayerCollection");
     }
 
     public void banPlayer(String username) {
