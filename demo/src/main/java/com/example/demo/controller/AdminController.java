@@ -29,19 +29,19 @@ public class AdminController {
         return ResponseEntity.ok("Player " + username + " deleted!");
     }
 
-    @PutMapping("/ban/player/username")
+    @PatchMapping("/player/ban/username/{username}")
     public ResponseEntity<String> banPlayer(@RequestBody String username) {
         playerService.banPlayer(username);
         return ResponseEntity.ok("Player " + username + " banned!");
     }
 
-    @PutMapping("/unban/player/username")
+    @PatchMapping("/player/unban/username/{username}")
     public ResponseEntity<String> unbanPlayer(@RequestBody String username) {
         playerService.unBanPlayer(username);
         return ResponseEntity.ok("Player " + username + " unbanned!");
     }
 
-    @PutMapping("/username")
+    @PutMapping("/username/")
     public ResponseEntity<String> updateAdminUsername(@RequestBody Map<String, String> requestBody) {
         String oldUsername = requestBody.get("oldUsername");
         String newUsername = requestBody.get("newUsername");
