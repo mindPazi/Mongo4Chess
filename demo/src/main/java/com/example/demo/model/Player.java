@@ -38,4 +38,8 @@ public class Player {
     public Player() {
     }
 
+    public String getUsername() {
+        return this.username;
+    }
+
 }

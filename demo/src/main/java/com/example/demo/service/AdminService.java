@@ -3,9 +3,6 @@ package com.example.demo.service;
 import com.example.demo.dao.AdminDAO;
 import com.example.demo.model.Tournament;
 import com.example.demo.model.Match;
-import com.example.demo.service.TournamentService;
-import com.example.demo.service.PlayerService;
-import com.example.demo.service.MatchService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

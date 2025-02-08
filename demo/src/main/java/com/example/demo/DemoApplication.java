@@ -17,5 +17,7 @@ public class DemoApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(DemoApplication.class, args);
 		logger.info("\nApplicazione avviata correttamente!");
+		logger.info("-------------------------------------");
+		logger.info("!!! Query Public Controller pushate ma non testate !!!");
 	}
 }
