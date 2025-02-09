@@ -20,6 +20,26 @@ public class PublicController {
 
     private final MatchService matchService;
 
+    @GetMapping("/matches")
+    public ResponseEntity<List<Document>> getMatches() {
+        List<Document> matches = matchService.getMatches();
+        return ResponseEntity.ok(matches);
+    }
+
+    @GetMapping("/matches/{username}")
+    public ResponseEntity<List<Document>> getMatchesByPlayer(
+            @RequestParam String player) {
+        List<Document> matches = matchService.getMatchesByPlayer(player);
+        return ResponseEntity.ok(matches);
+    }
+
+    @GetMapping("/openings/higher-win-rate")
+    public ResponseEntity<Map<String, Object>> getOpeningWithHigherWinRate() {
+        Document openingWithHigherWinRate = matchService.getOpeningWithHigherWinRate();
+        return ResponseEntity.ok(openingWithHigherWinRate);
+    }
+
+
     @GetMapping("/openings/most-played")
     public ResponseEntity<List<Map<String, Object>>> getMostPlayedOpenings(
             @RequestParam int elomin, @RequestParam int elomax) {
