@@ -22,6 +22,10 @@ public class MatchService {
         matchDAO.saveMatch(match);
     }
 
+    public void createMatch(Match match) {
+        matchDAO.saveMatch(match);
+    }
+
     public void deleteAllMatches() {
         matchDAO.deleteAllMatches();
     }
@@ -30,12 +34,23 @@ public class MatchService {
         matchDAO.deleteAllMatchesByPlayer(player);
     }
 
-    public List<Document> getMostPlayedOpenings(int elomin, int elomax) {
-        return matchDAO.getMostPlayedOpenings(elomin, elomax);
-    }
-
     public int getNumOfWinsAndDrawsPerElo(int elomin, int elomax) {
         return matchDAO.getNumOfWinsAndDrawsPerElo(elomin, elomax);
     }
 
+    public List<Document> getMatches() {
+        return matchDAO.getMatches();
+    }
+
+    public List<Document> getMatchesByPlayer(String player) {
+        return matchDAO.getMatchesByPlayer(player);
+    }
+
+    public Document getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
+        return matchDAO.getOpeningWithHigherWinRatePerElo(elomin, elomax);
+    }
+
+    public List<Document> getMostPlayedOpeningsPerElo(int elomin, int elomax) {
+        return matchDAO.getMostPlayedOpeningsPerElo(elomin, elomax);
+    }
 }

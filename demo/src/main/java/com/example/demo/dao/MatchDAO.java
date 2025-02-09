@@ -76,4 +76,47 @@ public class MatchDAO {
         return countResult != null ? countResult.getInteger("total", 0) : 0;
     }
 
+    public List<Document> getMatches() {
+        return matchCollection.find().into(Arrays.asList());
+    }
+
+    public List<Document> getMatchesByPlayer(String player) {
+        Document query = new Document("$or", Arrays.asList(
+                new Document("white", player),
+                new Document("black", player)));
+        return matchCollection.find(query).into(Arrays.asList());
+    }
+
+    public Document getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
+        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(
+                new Document("$match", new Document("$and", Arrays.asList(
+                        new Document("whiteElo", new Document("$gte", elomin).append("$lte", elomax)),
+                        new Document("blackElo", new Document("$gte", elomin).append("$lte", elomax))))),
+                new Document("$group", new Document("_id", "$ECO")
+                        .append("total", new Document("$sum", 1))
+                        .append("wins", new Document("$sum", new Document("$cond", Arrays.asList(
+                                new Document("$eq", Arrays.asList("$result", "W")), 1, 0))))),
+                new Document("$project", new Document("_id", 0)
+                        .append("ECO", "$_id")
+                        .append("total", 1)
+                        .append("winRate", new Document("$divide", Arrays.asList("$wins", "$total")))),
+                new Document("$sort", new Document("winRate", -1)),
+                new Document("$limit", 1)));
+
+        return results.first();
+    }
+
+    public List<Document> getMostPlayedOpeningsPerElo(int elomin, int elomax) {
+        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(
+                new Document("$match", new Document("$and", Arrays.asList(
+                        new Document("whiteElo", new Document("$gte", elomin).append("$lte", elomax)),
+                        new Document("blackElo", new Document("$gte", elomin).append("$lte", elomax))))),
+                new Document("$group", new Document("_id", "$ECO")
+                        .append("total", new Document("$sum", 1))),
+                new Document("$sort", new Document("total", -1)),
+                new Document("$limit", 10)));
+
+        return results.into(Arrays.asList()).stream().collect(Collectors.toList());
+    }
+
 }

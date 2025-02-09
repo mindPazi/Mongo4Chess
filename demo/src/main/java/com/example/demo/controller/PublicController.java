@@ -34,17 +34,17 @@ public class PublicController {
     }
 
     @GetMapping("/openings/higher-win-rate")
-    public ResponseEntity<Map<String, Object>> getOpeningWithHigherWinRate() {
-        Document openingWithHigherWinRate = matchService.getOpeningWithHigherWinRate();
+    public ResponseEntity<Map<String, Object>> getOpeningWithHigherWinRatePerElo(@RequestParam int elomin,
+            @RequestParam int elomax) {
+        Document openingWithHigherWinRate = matchService.getOpeningWithHigherWinRatePerElo(elomin, elomax);
         return ResponseEntity.ok(openingWithHigherWinRate);
     }
 
-
     @GetMapping("/openings/most-played")
-    public ResponseEntity<List<Map<String, Object>>> getMostPlayedOpenings(
+    public ResponseEntity<List<Map<String, Object>>> getMostPlayedOpeningsPerElo(
             @RequestParam int elomin, @RequestParam int elomax) {
 
-        List<Document> documents = matchService.getMostPlayedOpenings(elomin, elomax);
+        List<Document> documents = matchService.getMostPlayedOpeningsPerElo(elomin, elomax);
 
         if (documents == null || documents.isEmpty()) {
             return ResponseEntity.noContent().build();
