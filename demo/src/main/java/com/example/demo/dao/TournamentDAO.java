@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 import com.example.demo.model.Player;
 import com.example.demo.model.Match;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class TournamentDAO {
         System.out.println("Tournament saved successfully: " + tournament.toString());
     }
 
+    @SuppressWarnings("null")
     public void deleteTournament(String tournamentId) {
         mongoTemplate.remove(mongoTemplate.findById(tournamentId, Tournament.class));
         System.out.println("Tournament deleted successfully: " + tournamentId);
@@ -49,7 +51,7 @@ public class TournamentDAO {
     }
 
     public List<Tournament> getActiveTournaments() {
-        List<Tournament> tournaments = mongoTemplate.find(null, Tournament.class, "TournamentCollection");
+        List<Tournament> tournaments = mongoTemplate.find(new Query(), Tournament.class, "TournamentCollection");
         System.out.println("Active tournaments retrieved successfully");
         return tournaments;
     }
@@ -90,7 +92,7 @@ public class TournamentDAO {
     }
 
     public String getCreatedTournaments(String creator) {
-        List<Tournament> tournaments = mongoTemplate.find(null, Tournament.class, "TournamentCollection");
+        List<Tournament> tournaments = mongoTemplate.find(new Query(), Tournament.class, "TournamentCollection");
         StringBuilder createdTournaments = new StringBuilder();
         for (Tournament tournament : tournaments) {
             if (tournament.getCreator().equals(creator)) {
