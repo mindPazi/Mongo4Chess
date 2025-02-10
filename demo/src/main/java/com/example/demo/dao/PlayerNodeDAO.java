@@ -22,4 +22,5 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, String> {
         @Query("MATCH (a:PlayerNode {id: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode) " +
                         "RETURN b")
         public List<PlayerNode> getFriends(String playerId1);
+
 }

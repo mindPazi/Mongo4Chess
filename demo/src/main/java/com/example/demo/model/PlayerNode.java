@@ -5,7 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
 @Data
-@Node("Player")
+@Node("PlayerNode")
 public class PlayerNode {
 
     @Id

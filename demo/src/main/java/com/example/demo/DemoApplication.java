@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 
 @EnableMongoRepositories(basePackages = "com.example.demo.repository.mongo")
-@EnableNeo4jRepositories(basePackages = "com.example.demo.repository.neo4j")
+@EnableNeo4jRepositories(basePackages = { "com.example.demo.repository.neo4j", "com.example.demo.dao" })
 
 @SpringBootApplication
 public class DemoApplication {
