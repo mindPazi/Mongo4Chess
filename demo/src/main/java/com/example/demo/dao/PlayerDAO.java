@@ -38,4 +38,14 @@ public class PlayerDAO {
         playerCollection.updateOne(new Document("username", oldUsername),
                 new Document("$set", new Document("username", newUsername)));
     }
+
+    public void getStats() {
+        // get stats
+    }
+
+    public String getEloTrend(String username) {
+        // get elo trend
+        return "Elo trend";
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.PlayerDAO;
+import com.example.demo.dao.PlayerNodeDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -10,9 +11,11 @@ public class PlayerService {
 
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
     private final PlayerDAO playerDAO;
+    private final PlayerNodeDAO playerNodeDAO;
 
-    public PlayerService(PlayerDAO playerDAO) {
+    public PlayerService(PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO) {
         this.playerDAO = playerDAO;
+        this.playerNodeDAO = playerNodeDAO;
     }
 
     public void banPlayer(String playerUsername) {
@@ -57,6 +60,43 @@ public class PlayerService {
         } catch (Exception e) {
             logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", oldUsername, newUsername, e);
             throw new RuntimeException("Errore nell'aggiornare il nome utente da " + oldUsername + " a " + newUsername);
+        }
+    }
+
+    public void getStats() {
+        try {
+            playerDAO.getStats();
+        } catch (Exception e) {
+            logger.error("Errore durante il recupero delle statistiche", e);
+            throw new RuntimeException("Errore nel recupero delle statistiche");
+        }
+    }
+
+    public String getEloTrend(String playerId) {
+        try {
+            return playerDAO.getEloTrend(playerId);
+        } catch (Exception e) {
+            logger.error("Errore durante il recupero del trend Elo per il giocatore {}", playerId, e);
+            throw new RuntimeException("Errore nel recupero del trend Elo per il giocatore " + playerId);
+        }
+    }
+
+    public void addFriend(String playerId, String friendId) {
+        try {
+            playerNodeDAO.addFriend(playerId, friendId);
+        } catch (Exception e) {
+            logger.error("Errore durante l'aggiunta dell'amico {} per il giocatore {}", friendId, playerId, e);
+            throw new RuntimeException("Errore nell'aggiungere l'amico " + friendId + " per il giocatore " + playerId);
+        }
+    }
+
+    public void removeFriend(String playerId, String friendId) {
+        try {
+            playerNodeDAO.removeFriend(playerId, friendId);
+        } catch (Exception e) {
+            logger.error("Errore durante la rimozione dell'amico {} per il giocatore {}", friendId, playerId, e);
+            throw new RuntimeException(
+                    "Errore nella rimozione dell'amico " + friendId + " per il giocatore " + playerId);
         }
     }
 

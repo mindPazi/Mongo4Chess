@@ -7,6 +7,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.example.demo.model.Tournament;
+
+import org.springframework.data.mongodb.core.MongoTemplate;
+
 @Data
 @Document(collection = "TournamentCollection")
 
@@ -25,7 +29,8 @@ public class Tournament {
     // lista dei giocatori iscritti al torneo, con la posizione raggiunta
     private List<Map<String, Integer>> players;
     // lista delle partite più importanti del torneo
-    private List<Map<String, Match>> matches;
+    private List<Match> matches;
+    private MongoTemplate mongoTemplate;
 
     // todo: gestire il fatto che il numero di players deve essere una potenza del
     // 2, fare un check
@@ -43,4 +48,25 @@ public class Tournament {
     public void setWinner(Player winner) {
         this.winner = winner;
     }
+
+    public void setMatches(List<Match> matches) {
+        this.matches = matches;
+    }
+
+    public void setPlayers(List<Map<String, Integer>> players) {
+        this.players = players;
+    }
+
+    public void addMatch(Match match) {
+        // add match to tournament in mongodb
+    }
+
+    public void addPlayer(String player) {
+        // add player to tournament in mongodb
+    }
+
+    public void removePlayer(String player) {
+        // remove player from tournament in mongodb
+    }
+
 }

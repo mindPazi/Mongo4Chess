@@ -4,6 +4,7 @@ import com.example.demo.model.Tournament;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 import com.example.demo.model.Player;
+import com.example.demo.model.Match;
 
 import java.util.List;
 
@@ -46,4 +47,57 @@ public class TournamentDAO {
         System.out.println("All tournaments retrieved successfully");
         return tournaments;
     }
+
+    public List<Tournament> getActiveTournaments() {
+        List<Tournament> tournaments = mongoTemplate.find(null, Tournament.class, "TournamentCollection");
+        System.out.println("Active tournaments retrieved successfully");
+        return tournaments;
+    }
+
+    public void addMostImportantMatches(List<Match> matches, String tournamentId) {
+        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
+        if (tournament != null) {
+            tournament.setMatches(matches);
+            mongoTemplate.save(tournament);
+            System.out.println("Most important matches added successfully to tournament: " + tournamentId);
+        } else {
+            System.out.println("Tournament not found: " + tournamentId);
+        }
+    }
+
+    public void joinTournament(String tournamentId, String playerUsername) {
+        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
+        if (tournament != null) {
+            tournament.addPlayer(playerUsername);
+            mongoTemplate.save(tournament);
+            System.out.println(
+                    "Player joined tournament successfully: " + playerUsername + " to tournament: " + tournamentId);
+        } else {
+            System.out.println("Tournament not found: " + tournamentId);
+        }
+    }
+
+    public void deletePlayerFromTournament(String tournamentId, String playerUsername) {
+        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
+        if (tournament != null) {
+            tournament.removePlayer(playerUsername);
+            mongoTemplate.save(tournament);
+            System.out.println("Player removed from tournament successfully: " + playerUsername + " from tournament: "
+                    + tournamentId);
+        } else {
+            System.out.println("Tournament not found: " + tournamentId);
+        }
+    }
+
+    public String getCreatedTournaments(String creator) {
+        List<Tournament> tournaments = mongoTemplate.find(null, Tournament.class, "TournamentCollection");
+        StringBuilder createdTournaments = new StringBuilder();
+        for (Tournament tournament : tournaments) {
+            if (tournament.getCreator().equals(creator)) {
+                createdTournaments.append(tournament.toString());
+            }
+        }
+        return createdTournaments.toString();
+    }
+
 }
