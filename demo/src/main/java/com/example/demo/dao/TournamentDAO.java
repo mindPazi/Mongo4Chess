@@ -22,7 +22,6 @@ public class TournamentDAO {
         System.out.println("Tournament saved successfully: " + tournament.toString());
     }
 
-    @SuppressWarnings("null")
     public void deleteTournament(String tournamentId) {
         mongoTemplate.remove(mongoTemplate.findById(tournamentId, Tournament.class));
         System.out.println("Tournament deleted successfully: " + tournamentId);
