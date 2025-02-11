@@ -9,8 +9,6 @@ import java.util.Map;
 
 import com.example.demo.model.Tournament;
 
-import org.springframework.data.mongodb.core.MongoTemplate;
-
 @Data
 @Document(collection = "TournamentCollection")
 
@@ -30,7 +28,6 @@ public class Tournament {
     private List<Map<String, Integer>> players;
     // lista delle partite più importanti del torneo
     private List<Match> matches;
-    private MongoTemplate mongoTemplate;
 
     // todo: gestire il fatto che il numero di players deve essere una potenza del
     // 2, fare un check
