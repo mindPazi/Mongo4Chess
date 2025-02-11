@@ -32,14 +32,17 @@ public class Match {
     private String reason;
     private List<String> moves;
 
+    // Costruttore completo
     public Match(String id, Date date, String white, String black, String result,
-            String timeControl,
-            String ECO, int plyCount, String reason, List<String> moves) {
+            int whiteElo, int blackElo, String timeControl, String ECO,
+            int plyCount, String reason, List<String> moves) {
         this.id = id;
         this.date = date;
         this.white = white;
         this.black = black;
         this.result = result;
+        this.whiteElo = whiteElo;
+        this.blackElo = blackElo;
         this.timeControl = timeControl;
         this.ECO = ECO;
         this.plyCount = plyCount;
@@ -58,4 +61,5 @@ public class Match {
             throw new RuntimeException("Errore nella conversione di Match in JSON", e);
         }
     }
+
 }
