@@ -17,8 +17,9 @@
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 	</properties>
+
 
 	<dependencies>
 		<!-- Spring Boot Web -->
@@ -88,11 +89,11 @@
 			<artifactId>jackson-datatype-jsr310</artifactId>
 			<version>2.18.2</version>			<!-- Assicurati di usare la stessa versione di jackson-databind -->
 		</dependency>
-		 <dependency>
-         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-security</artifactId>
-		
-    </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+
+		</dependency>
 
 
 

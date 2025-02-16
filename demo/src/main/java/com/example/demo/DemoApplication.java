@@ -18,7 +18,8 @@ public class DemoApplication {
 		SpringApplication.run(DemoApplication.class, args);
 		logger.info("\nApplicazione avviata correttamente!");
 		logger.info("-------------------------------------");
-		logger.info("\n!!! Public Controller pushato ma non testateo !!!");
+		logger.info("\n!!! Public Controller pushato ma non testato !!!");
 		logger.info("\n!!! Gestire l'accesso con credenziali di Admin e Player!!!");
+		logger.info("\n!!! Testare connessione a neo4J !!!");
 	}
 }
