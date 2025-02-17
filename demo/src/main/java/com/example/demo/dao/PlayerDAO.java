@@ -15,6 +15,20 @@ public class PlayerDAO {
         this.playerCollection = mongodatabase.getCollection("PlayerCollection");
     }
 
+    public void createPlayer(String username, String password, int elo) {
+        Document player = new Document("username", username)
+                .append("password", password)
+                .append("elo", elo)
+                .append("blackWins", 0)
+                .append("whiteWins", 0)
+                .append("whiteDraws", 0)
+                .append("blackDraws", 0)
+                .append("whiteLosses", 0)
+                .append("blackLosses", 0)
+                .append("isBanned", false);
+        playerCollection.insertOne(player);
+    }
+
     public void banPlayer(String username) {
         playerCollection.updateOne(new Document("username", username),
                 new Document("$set", new Document("isBanned", true)));

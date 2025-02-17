@@ -188,8 +188,9 @@ public class PlayerController {
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
     @PostMapping("/create")
-    public ResponseEntity<String> createPlayer(@RequestParam String username, @RequestParam int elo) {
-        playerService.createPlayer(username, elo);
+    public ResponseEntity<String> createPlayer(@RequestParam String username, @RequestParam String password,
+            @RequestParam int elo) {
+        playerService.createPlayer(username, password, elo);
         return ResponseEntity.ok("Player created");
     }
 
