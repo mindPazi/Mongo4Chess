@@ -5,6 +5,7 @@ import com.example.demo.dao.Neo4jDAO;
 import com.example.demo.model.EventMongoDB;
 import com.example.demo.model.EventNeo4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -14,11 +15,14 @@ public class EventService {
 
     private final MongoDBDAO mongoDBDAO;
     private final Neo4jDAO neo4jDAO;
+    @Value("${spring.neo4j.database}")
+    private String database;
 
     @Autowired
     public EventService(MongoDBDAO mongoDBDAO, Neo4jDAO neo4jDAO) {
         this.mongoDBDAO = mongoDBDAO;
         this.neo4jDAO = neo4jDAO;
+
     }
 
     public List<EventMongoDB> getAllEventsFromMongo() {
@@ -46,6 +50,7 @@ public class EventService {
     }
 
     public EventNeo4j addEventToNeo4j(EventNeo4j event) {
+        System.out.println("✅ Database attivo: " + database);
         return neo4jDAO.save(event);
     }
 

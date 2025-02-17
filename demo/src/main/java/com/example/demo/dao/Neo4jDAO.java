@@ -21,7 +21,7 @@ public class Neo4jDAO {
 
     public List<EventNeo4j> findAll() {
         List<EventNeo4j> events = new ArrayList<>();
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(SessionConfig.forDatabase("chessDB"))) { // 👈 Specifica il database
             session.run("MATCH (e:Event) RETURN e.id, e.nome, e.data")
                     .stream()
                     .forEach(record -> events.add(new EventNeo4j(
@@ -32,7 +32,7 @@ public class Neo4jDAO {
     }
 
     public Optional<EventNeo4j> findById(Long id) {
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(SessionConfig.forDatabase("chessDB"))) { // 👈 Specifica il database
             Record record = session.run("MATCH (e:Event) WHERE e.id = $id RETURN e.nome, e.data",
                     Values.parameters("id", id)).single();
             if (record != null) {
@@ -43,7 +43,7 @@ public class Neo4jDAO {
     }
 
     public EventNeo4j save(EventNeo4j event) {
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(SessionConfig.forDatabase("chessDB"))) { // 👈 Specifica il database
             session.run("CREATE (e:Event {id: $id, nome: $nome, data: $data})",
                     Values.parameters("id", event.getId(), "nome", event.getNome(), "data", event.getData()));
         }
@@ -51,7 +51,7 @@ public class Neo4jDAO {
     }
 
     public void deleteById(Long id) {
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(SessionConfig.forDatabase("chessDB"))) { // 👈 Specifica il database
             session.run("MATCH (e:Event) WHERE e.id = $id DELETE e", Values.parameters("id", id));
         }
     }

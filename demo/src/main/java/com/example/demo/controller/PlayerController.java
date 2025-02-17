@@ -40,7 +40,11 @@ public class PlayerController {
     })
     @PostMapping("/match")
     public ResponseEntity<Match> createMatch(@RequestBody Match match) {
+        System.out.println("📩 Ricevuto match: " + match);
+
         matchService.saveMatch(match);
+
+        System.out.println("✅ Match salvato con successo!");
         return ResponseEntity.ok(match);
     }
 
