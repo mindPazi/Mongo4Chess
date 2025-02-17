@@ -181,4 +181,16 @@ public class PlayerController {
         playerService.removeFriend(playerId, friendId);
         return ResponseEntity.ok("Friend removed");
     }
+
+    @Operation(summary = "Crea un giocatore")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Giocatore creato con successo"),
+            @ApiResponse(responseCode = "400", description = "Dati non validi")
+    })
+    @PostMapping("/create")
+    public ResponseEntity<String> createPlayer(@RequestParam String username, @RequestParam int elo) {
+        playerService.createPlayer(username, elo);
+        return ResponseEntity.ok("Player created");
+    }
+
 }

@@ -100,4 +100,13 @@ public class PlayerService {
         }
     }
 
+    public void createPlayer(String username, int elo) {
+        try {
+            playerNodeDAO.createPlayer(username, elo);
+        } catch (Exception e) {
+            logger.error("Errore durante la creazione del giocatore {}", username, e);
+            throw new RuntimeException("Errore nella creazione del giocatore " + username);
+        }
+    }
+
 }
