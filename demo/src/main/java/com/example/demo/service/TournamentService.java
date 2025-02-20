@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.model.Match;
+import com.example.demo.model.Player;
 import com.example.demo.model.Tournament;
 
 import java.util.List;
@@ -25,20 +26,24 @@ public class TournamentService {
         this.tournamentDAO = tournamentDAO;
     }
 
-    public String createTournament(Tournament tournament) {
-        return "Tournament created successfully: " + tournament.toString();
+    // Metodo per creare un torneo
+    public Tournament createTournament(Tournament tournament) {
+        return tournamentDAO.createTournament(tournament);
     }
 
-    public String deleteTournament(Tournament tournament) {
-        return "Tournament deleted successfully: " + tournament;
+    // Metodo per eliminare un torneo
+    public String deleteTournament(String tournamentId) {
+        tournamentDAO.deleteTournament(tournamentId);
+        return "Tournament deleted successfully: " + tournamentId;
     }
 
-    public String updateTournament(String tournament) {
-        return "Tournament updated successfully: " + tournament;
-    }
+    // Metodo per aggiungere un vincitore al torneo
+    public String addWinner(String tournamentId, String winnerUsername) {
+        Player winner = new Player();
+        winner.setUsername(winnerUsername);
 
-    public String addWinner(String tournament, String winner) {
-        return "Winner added successfully: " + winner + " to tournament: " + tournament;
+        tournamentDAO.addWinner(tournamentId, winner);
+        return "Winner added successfully: " + winnerUsername + " to tournament: " + tournamentId;
     }
 
     public List<Tournament> getAllTournaments() {

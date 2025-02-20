@@ -125,4 +125,12 @@ public class TournamentDAO {
         mongoTemplate.updateFirst(query, update, Tournament.class);
         System.out.println("Giocatore " + playerId + " rimosso dal torneo: " + tournamentId);
     }
+
+    // Metodo per creare e salvare un torneo
+    public Tournament createTournament(Tournament tournament) {
+        Tournament savedTournament = mongoTemplate.save(tournament, "TournamentCollection");
+        System.out.println("Tournament created successfully: " + savedTournament.getId());
+        return savedTournament;
+    }
+
 }

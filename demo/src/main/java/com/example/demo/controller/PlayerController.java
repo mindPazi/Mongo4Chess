@@ -65,9 +65,9 @@ public class PlayerController {
             @ApiResponse(responseCode = "404", description = "Torneo non trovato")
     })
     @DeleteMapping("/tournament")
-    public ResponseEntity<Tournament> deleteTournament(@RequestBody Tournament tournament) {
-        tournamentService.deleteTournament(tournament);
-        return ResponseEntity.ok(tournament);
+    public ResponseEntity<String> deleteTournament(@RequestBody String tournamentid) {
+        tournamentService.deleteTournament(tournamentid);
+        return ResponseEntity.ok(tournamentid);
     }
 
     @Operation(summary = "Ottieni statistiche del giocatore")

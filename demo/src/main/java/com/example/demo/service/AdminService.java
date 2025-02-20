@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.AdminDAO;
-import com.example.demo.model.Tournament;
 import com.example.demo.model.Match;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 public class AdminService {
 
     private final AdminDAO adminDAO;
-    private final TournamentService tournamentService;
     private final PlayerService playerService;
     private final MatchService matchService;
 
@@ -19,7 +17,6 @@ public class AdminService {
     public AdminService(AdminDAO adminDAO, TournamentService tournamentService,
             PlayerService playerService, MatchService matchService) {
         this.adminDAO = adminDAO;
-        this.tournamentService = tournamentService;
         this.playerService = playerService;
         this.matchService = matchService;
     }
@@ -32,10 +29,6 @@ public class AdminService {
     public String updateAdminPassword(String username, String newPassword) {
         adminDAO.updateAdminPassword(username, newPassword);
         return "Admin password updated successfully for: " + username;
-    }
-
-    public String createTournament(Tournament tournament) {
-        return tournamentService.createTournament(tournament);
     }
 
     public void deletePlayer(String player) {
