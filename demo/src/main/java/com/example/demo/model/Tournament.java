@@ -3,15 +3,10 @@ package com.example.demo.model;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import com.example.demo.model.Tournament;
+import java.util.*;
 
 @Data
 @Document(collection = "TournamentCollection")
-
 public class Tournament {
     private String id;
     private String creator;
@@ -25,12 +20,10 @@ public class Tournament {
     private int eloMax;
     private Player winner;
     // lista dei giocatori iscritti al torneo, con la posizione raggiunta
-    private List<Map<String, Integer>> players;
+    private List<Map<String, Integer>> players = new ArrayList<>();
     // lista delle partite più importanti del torneo
-    private List<Match> matches;
+    private List<Match> matches = new ArrayList<>();
 
-    // todo: gestire il fatto che il numero di players deve essere una potenza del
-    // 2, fare un check
     public Tournament(String name, int eloMin, int eloMax, int maxPlayers) {
         this.maxPlayers = maxPlayers;
         this.name = name;
@@ -42,28 +35,15 @@ public class Tournament {
     public Tournament() {
     }
 
-    public void setWinner(Player winner) {
-        this.winner = winner;
+    // Metodo per aggiungere un giocatore
+    public void addPlayer(String playerUsername) {
+        Map<String, Integer> playerEntry = new HashMap<>();
+        playerEntry.put(playerUsername, 0); // 0 come posizione iniziale
+        this.players.add(playerEntry);
     }
 
-    public void setMatches(List<Match> matches) {
-        this.matches = matches;
+    // Metodo per rimuovere un giocatore
+    public void removePlayer(String playerUsername) {
+        this.players.removeIf(playerMap -> playerMap.containsKey(playerUsername));
     }
-
-    public void setPlayers(List<Map<String, Integer>> players) {
-        this.players = players;
-    }
-
-    public void addMatch(Match match) {
-        // add match to tournament in mongodb
-    }
-
-    public void addPlayer(String player) {
-        // add player to tournament in mongodb
-    }
-
-    public void removePlayer(String player) {
-        // remove player from tournament in mongodb
-    }
-
 }

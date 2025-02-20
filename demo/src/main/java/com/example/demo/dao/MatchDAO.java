@@ -17,15 +17,21 @@ import java.util.stream.Collectors;
 @Repository
 public class MatchDAO {
         private final MongoCollection<Document> matchCollection;
+        private final MongoCollection<Document> playerCollection;
 
         public MatchDAO(MongoClient mongoClient) {
                 MongoDatabase database = mongoClient.getDatabase("chessDB");
                 this.matchCollection = database.getCollection("MatchCollection");
+                this.playerCollection = database.getCollection("PlayerCollection");
         }
 
         public void saveMatch(Match match) {
                 Document matchDocument = Document.parse(match.toJson());
                 matchCollection.insertOne(matchDocument);
+                playerCollection.updateOne(new Document("username", match.getWhite()),
+                                new Document("$push", new Document("matches", matchDocument)));
+                playerCollection.updateOne(new Document("username", match.getBlack()),
+                                new Document("$push", new Document("matches", matchDocument)));
         }
 
         public void deleteAllMatches() {

@@ -82,4 +82,37 @@ public class TournamentService {
     public String getCreatedTournaments(String creator) {
         return tournamentDAO.getCreatedTournaments(creator);
     }
+
+    public void addMatch(String tournamentId, Match match) {
+        try {
+            tournamentDAO.addMatch(tournamentId, match);
+            logger.info("Match aggiunto con successo al torneo {}", tournamentId);
+        } catch (Exception e) {
+            logger.error("Errore durante l'aggiunta del match al torneo {}", tournamentId, e);
+            throw new RuntimeException("Errore nell'aggiungere il match al torneo " + tournamentId);
+        }
+    }
+
+    public void addPlayer(String tournamentId, String playerId) {
+        try {
+            tournamentDAO.addPlayer(tournamentId, playerId);
+            logger.info("Giocatore {} aggiunto con successo al torneo {}", playerId, tournamentId);
+        } catch (Exception e) {
+            logger.error("Errore durante l'aggiunta del giocatore {} al torneo {}", playerId, tournamentId, e);
+            throw new RuntimeException(
+                    "Errore nell'aggiungere il giocatore " + playerId + " al torneo " + tournamentId);
+        }
+    }
+
+    public void removePlayer(String tournamentId, String playerId) {
+        try {
+            tournamentDAO.removePlayer(tournamentId, playerId);
+            logger.info("Giocatore {} rimosso con successo dal torneo {}", playerId, tournamentId);
+        } catch (Exception e) {
+            logger.error("Errore durante la rimozione del giocatore {} dal torneo {}", playerId, tournamentId, e);
+            throw new RuntimeException(
+                    "Errore nella rimozione del giocatore " + playerId + " dal torneo " + tournamentId);
+        }
+    }
+
 }

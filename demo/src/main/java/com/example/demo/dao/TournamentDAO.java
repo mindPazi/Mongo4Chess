@@ -5,7 +5,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 import com.example.demo.model.Player;
 import com.example.demo.model.Match;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
 
@@ -101,4 +103,26 @@ public class TournamentDAO {
         return createdTournaments.toString();
     }
 
+    public void addMatch(String tournamentId, Match match) {
+        Query query = new Query(Criteria.where("id").is(tournamentId));
+        Update update = new Update().push("matches", match);
+        mongoTemplate.updateFirst(query, update, Tournament.class);
+        System.out.println("Match aggiunto con successo al torneo: " + tournamentId);
+    }
+
+    // Aggiunge un giocatore al torneo
+    public void addPlayer(String tournamentId, String playerId) {
+        Query query = new Query(Criteria.where("id").is(tournamentId));
+        Update update = new Update().push("players", playerId);
+        mongoTemplate.updateFirst(query, update, Tournament.class);
+        System.out.println("Giocatore " + playerId + " aggiunto al torneo: " + tournamentId);
+    }
+
+    // Rimuove un giocatore dal torneo
+    public void removePlayer(String tournamentId, String playerId) {
+        Query query = new Query(Criteria.where("id").is(tournamentId));
+        Update update = new Update().pull("players", playerId);
+        mongoTemplate.updateFirst(query, update, Tournament.class);
+        System.out.println("Giocatore " + playerId + " rimosso dal torneo: " + tournamentId);
+    }
 }
