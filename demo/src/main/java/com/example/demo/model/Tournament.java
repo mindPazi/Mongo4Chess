@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
@@ -8,6 +9,7 @@ import java.util.*;
 @Data
 @Document(collection = "TournamentCollection")
 public class Tournament {
+    @Id
     private String id;
     private String creator;
     private String description;

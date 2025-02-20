@@ -2,6 +2,9 @@ package com.example.demo.service;
 
 import com.example.demo.dao.PlayerDAO;
 import com.example.demo.dao.PlayerNodeDAO;
+import com.example.demo.model.Player;
+import com.example.demo.model.PlayerNode;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -12,6 +15,10 @@ public class PlayerService {
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
     private final PlayerDAO playerDAO;
     private final PlayerNodeDAO playerNodeDAO;
+    @Setter
+    private Player player;
+    @Setter
+    private PlayerNode playerNode;
 
     public PlayerService(PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO) {
         this.playerDAO = playerDAO;
@@ -100,10 +107,11 @@ public class PlayerService {
         }
     }
 
-    public void createPlayer(String username, String password, int elo) {
+    public String createPlayer(String username, String password, int elo) {
         try {
             playerNodeDAO.createPlayer(username, elo);
-            playerDAO.createPlayer(username, password, elo);
+            playerDAO.createPlayer(username, password);
+            return "Giocatore creato con successo";
         } catch (Exception e) {
             logger.error("Errore durante la creazione del giocatore {}", username, e);
             throw new RuntimeException("Errore nella creazione del giocatore " + username);

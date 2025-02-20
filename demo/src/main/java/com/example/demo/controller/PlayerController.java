@@ -182,7 +182,9 @@ public class PlayerController {
         return ResponseEntity.ok("Friend removed");
     }
 
-    @Operation(summary = "Crea un giocatore")
+    //spostato in registration controller
+
+    /*@Operation(summary = "Crea un giocatore")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Giocatore creato con successo"),
             @ApiResponse(responseCode = "400", description = "Dati non validi")
@@ -192,6 +194,6 @@ public class PlayerController {
             @RequestParam int elo) {
         playerService.createPlayer(username, password, elo);
         return ResponseEntity.ok("Player created");
-    }
+    }*/
 
 }
