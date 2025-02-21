@@ -5,11 +5,17 @@ import com.example.demo.dao.AdminDAO;
 import lombok.RequiredArgsConstructor;
 import com.example.demo.model.Player;
 import com.example.demo.model.Admin;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -43,5 +49,11 @@ public class CustomUserService implements UserDetailsService {
 
         throw new UsernameNotFoundException("User not found");
     }
+
+    /*private Collection<? extends GrantedAuthority> getAuthorities(String role) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + role)); // Important: Add "ROLE_" prefix
+        return authorities;
+    }*/
 
 }

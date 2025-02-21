@@ -109,9 +109,13 @@ public class PlayerService {
 
     public String createPlayer(String username, String password, int elo) {
         try {
-            playerNodeDAO.createPlayer(username, elo);
-            playerDAO.createPlayer(username, password);
-            return "Giocatore creato con successo";
+            //playerNodeDAO.createPlayer(username, elo);
+            if(playerDAO.getPlayer(username) == null) {
+                playerDAO.createPlayer(username, password);
+                return "Giocatore creato con successo";
+            } else {
+                return "Giocatore già esistente";
+            }
         } catch (Exception e) {
             logger.error("Errore durante la creazione del giocatore {}", username, e);
             throw new RuntimeException("Errore nella creazione del giocatore " + username);

@@ -59,8 +59,11 @@ public class PlayerDAO {
     }
 
     public Player getPlayer(String player) {
-        return convertDocumentToPlayer(
-                playerCollection.find(new Document("username", player)).into(new ArrayList<>()).get(0));
+        List<Document> results = playerCollection.find(new Document("username", player)).into(new ArrayList<>());
+        if (results.isEmpty()) {
+            return null; // player not found
+        }
+        return convertDocumentToPlayer(results.get(0));
     }
 
     private Player convertDocumentToPlayer(Document doc) {
