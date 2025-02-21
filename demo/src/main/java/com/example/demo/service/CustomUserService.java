@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @Service
 @RequiredArgsConstructor
 public class CustomUserService implements UserDetailsService {
@@ -28,32 +29,35 @@ public class CustomUserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Player player = playerDAO.getPlayer(username);
-        //PlayerNode playerNode = playerDAO.getPlayerNode(username);
+        // PlayerNode playerNode = playerDAO.getPlayerNode(username);
         if (player != null) {
             playerService.setPlayer(player);
-            //playerService.setPlayerNode(playerNode);
+            // playerService.setPlayerNode(playerNode);
 
             return User.builder()
                     .username(player.getUsername())
                     .password(player.getPassword())
-                    //.roles("PLAYER")
+                    // .roles("PLAYER")
                     .build();
         } else if (adminDAO.getAdmin(username) != null) {
             Admin admin = adminDAO.getAdmin(username);
             return User.builder()
                     .username(admin.getUsername())
                     .password(admin.getPassword())
-                    //.roles("ADMIN")
+                    // .roles("ADMIN")
                     .build();
         }
 
         throw new UsernameNotFoundException("User not found");
     }
 
-    /*private Collection<? extends GrantedAuthority> getAuthorities(String role) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + role)); // Important: Add "ROLE_" prefix
-        return authorities;
-    }*/
+    /*
+     * private Collection<? extends GrantedAuthority> getAuthorities(String role) {
+     * List<GrantedAuthority> authorities = new ArrayList<>();
+     * authorities.add(new SimpleGrantedAuthority("ROLE_" + role)); // Important:
+     * Add "ROLE_" prefix
+     * return authorities;
+     * }
+     */
 
 }

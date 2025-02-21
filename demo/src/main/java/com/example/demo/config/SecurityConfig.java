@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+@SuppressWarnings("unused")
 @Configuration
 @EnableWebSecurity
 @AllArgsConstructor
@@ -36,7 +37,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(){
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(customUserService);
         provider.setPasswordEncoder(passwordEncoder());
@@ -48,14 +49,17 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // 🔥 Disabilita CSRF per Swagger e API REST
                 .authorizeHttpRequests(auth -> auth
-                        //.requestMatchers("/api/player/**").permitAll() // ✅ Permette tutte le richieste a /api/player
-                        //.requestMatchers("/api/admin/**").hasRole("ADMIN") // ✅ Richiede ruolo ADMIN per /api/admin
+                        // .requestMatchers("/api/player/**").permitAll() // ✅ Permette tutte le
+                        // richieste a /api/player
+                        // .requestMatchers("/api/admin/**").hasRole("ADMIN") // ✅ Richiede ruolo ADMIN
+                        // per /api/admin
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // ✅ Permette Swagger
                         .requestMatchers("/api/register").permitAll() // ✅ Permette la registrazione
                         .requestMatchers("/login").permitAll()
                         .anyRequest().authenticated()) // All other requests must be authenticated
                 .formLogin(form -> form
-                        .successHandler(new SavedRequestAwareAuthenticationSuccessHandler())) // Use default success handler
+                        .successHandler(new SavedRequestAwareAuthenticationSuccessHandler())) // Use default success
+                                                                                              // handler
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .sessionManagement(session -> session
                         .maximumSessions(1) // Allow only one session per user

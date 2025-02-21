@@ -66,6 +66,7 @@ public class PlayerDAO {
         return convertDocumentToPlayer(results.get(0));
     }
 
+    @SuppressWarnings("unchecked")
     private Player convertDocumentToPlayer(Document doc) {
         Player player = new Player();
         player.setUsername(doc.getString("username"));
@@ -75,10 +76,10 @@ public class PlayerDAO {
         return player;
     }
 
+    @SuppressWarnings("unused")
     private Document convertPlayerToDocument(Player player) {
         return new Document("username", player.getUsername())
                 .append("password", player.getPassword());
     }
-
 
 }
