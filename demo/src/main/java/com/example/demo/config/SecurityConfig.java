@@ -64,14 +64,18 @@ public class SecurityConfig {
                                                                                               // handler
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .exceptionHandling(exception -> exception
-                        .accessDeniedHandler(new AccessDeniedHandlerImpl() {{
-                            setErrorPage("/login"); // Redirect to login page on access denied
-                        }}))
+                        .accessDeniedHandler(new AccessDeniedHandlerImpl() {
+                            {
+                                setErrorPage("/login"); // Redirect to login page on access denied
+                            }
+                        }))
 
-                /*.sessionManagement(session -> session
-                        .maximumSessions(1) // Allow only one session per user
-                        .maxSessionsPreventsLogin(true) // Prevent new login if max sessions reached
-                )*/;
+        /*
+         * .sessionManagement(session -> session
+         * .maximumSessions(1) // Allow only one session per user
+         * .maxSessionsPreventsLogin(true) // Prevent new login if max sessions reached
+         * )
+         */;
 
         return http.build();
     }
