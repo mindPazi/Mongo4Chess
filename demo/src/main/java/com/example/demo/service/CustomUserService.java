@@ -37,14 +37,14 @@ public class CustomUserService implements UserDetailsService {
             return User.builder()
                     .username(player.getUsername())
                     .password(player.getPassword())
-                    // .roles("PLAYER")
+                    .roles("PLAYER")
                     .build();
         } else if (adminDAO.getAdmin(username) != null) {
             Admin admin = adminDAO.getAdmin(username);
             return User.builder()
                     .username(admin.getUsername())
                     .password(admin.getPassword())
-                    // .roles("ADMIN")
+                    .roles("ADMIN")
                     .build();
         }
 
