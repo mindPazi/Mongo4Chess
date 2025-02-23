@@ -39,13 +39,16 @@ public class PlayerDAO {
         playerCollection.deleteOne(new Document("username", username));
     }
 
-    public void updatePlayerPassword(String oldUsername, String newPassword) {
-        playerCollection.updateOne(new Document("username", oldUsername),
+    public void updatePlayerPassword(String username, String newPassword) {
+        playerCollection.updateOne(new Document("username", username),
                 new Document("$set", new Document("password", newPassword)));
     }
 
     public void updatePlayerUsername(String oldUsername, String newUsername) {
-        playerCollection.updateOne(new Document("username", oldUsername),
+
+        // Esegui l'aggiornamento nel database
+        playerCollection.updateOne(
+                new Document("username", oldUsername),
                 new Document("$set", new Document("username", newUsername)));
     }
 
@@ -53,9 +56,29 @@ public class PlayerDAO {
         // get stats
     }
 
-    public String getEloTrend(String username) {
-        // get elo trend
-        return "Elo trend";
+    public List<Integer> getEloTrend(String username) {
+        // Recupera il player tramite il metodo esistente
+        Player player = getPlayer(username);
+
+        if (player == null) {
+            throw new RuntimeException("Player non trovato con username: " + username);
+        }
+
+        List<Match> matches = player.getMatches();
+        List<Integer> eloTrend = new ArrayList<>();
+
+        // Estrai l'elo iniziale da ogni match in base al ruolo
+        if (matches != null) {
+            for (Match match : matches) {
+                if (username.equals(match.getWhite())) {
+                    eloTrend.add(match.getWhiteElo());
+                } else if (username.equals(match.getBlack())) {
+                    eloTrend.add(match.getBlackElo());
+                }
+            }
+        }
+
+        return eloTrend;
     }
 
     public Player getPlayer(String player) {

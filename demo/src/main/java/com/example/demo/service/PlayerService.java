@@ -5,8 +5,14 @@ import com.example.demo.dao.PlayerNodeDAO;
 import com.example.demo.model.Player;
 import com.example.demo.model.PlayerNode;
 import lombok.Setter;
+
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,6 +25,7 @@ public class PlayerService {
     private Player player;
     @Setter
     private PlayerNode playerNode;
+    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public PlayerService(PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO) {
         this.playerDAO = playerDAO;
@@ -52,21 +59,40 @@ public class PlayerService {
         }
     }
 
-    public void updatePlayerPassword(String playerUsername, String newPassword) {
+    public void updatePlayerPassword(String oldPassword, String newPassword) {
         try {
-            playerDAO.updatePlayerPassword(playerUsername, newPassword);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = authentication.getName();
+
+            Player player = playerDAO.getPlayer(currentUsername);
+
+            if (!encoder.matches(oldPassword, player.getPassword())) {
+                throw new IllegalArgumentException("La vecchia password non è corretta.");
+            }
+
+            String hashedNewPassword = encoder.encode(newPassword);
+
+            playerDAO.updatePlayerPassword(currentUsername, hashedNewPassword);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiornamento della password per il giocatore: {}", playerUsername, e);
-            throw new RuntimeException("Errore nell'aggiornare la password per il giocatore: " + playerUsername);
+            logger.error("Errore durante l'aggiornamento della password per il giocatore: {}", e.getMessage(), e);
+            throw new RuntimeException("Errore nell'aggiornare la password per il giocatore.");
         }
     }
 
-    public void updatePlayerUsername(String oldUsername, String newUsername) {
+    public void updatePlayerUsername(String newUsername) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
         try {
-            playerDAO.updatePlayerUsername(oldUsername, newUsername);
+            playerDAO.updatePlayerUsername(currentUsername, newUsername);
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", oldUsername, newUsername, e);
-            throw new RuntimeException("Errore nell'aggiornare il nome utente da " + oldUsername + " a " + newUsername);
+            logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", currentUsername, newUsername,
+                    e);
+            throw new RuntimeException(
+                    "Errore nell'aggiornare il nome utente da " + currentUsername + " a " + newUsername);
         }
     }
 
@@ -79,7 +105,7 @@ public class PlayerService {
         }
     }
 
-    public String getEloTrend(String playerId) {
+    public List<Integer> getEloTrend(String playerId) {
         try {
             return playerDAO.getEloTrend(playerId);
         } catch (Exception e) {
@@ -88,29 +114,40 @@ public class PlayerService {
         }
     }
 
-    public void addFriend(String playerId, String friendId) {
+    public void addFriend(String friendId) {
         try {
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String playerId = authentication.getName();
+
             playerNodeDAO.addFriend(playerId, friendId);
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiunta dell'amico {} per il giocatore {}", friendId, playerId, e);
-            throw new RuntimeException("Errore nell'aggiungere l'amico " + friendId + " per il giocatore " + playerId);
+            logger.error("Errore durante l'aggiunta dell'amico {} per il giocatore {}", friendId, e.getMessage(), e);
+            throw new RuntimeException("Errore nell'aggiungere l'amico " + friendId);
         }
     }
 
-    public void removeFriend(String playerId, String friendId) {
+    public void removeFriend(String friendId) {
         try {
-            playerNodeDAO.removeFriend(playerId, friendId);
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String playerId = authentication.getName();
+
+            int removed = playerNodeDAO.removeFriend(playerId, friendId);
+
+            if (removed == 0) {
+                throw new IllegalArgumentException("Amico non trovato o relazione inesistente");
+            }
         } catch (Exception e) {
-            logger.error("Errore durante la rimozione dell'amico {} per il giocatore {}", friendId, playerId, e);
-            throw new RuntimeException(
-                    "Errore nella rimozione dell'amico " + friendId + " per il giocatore " + playerId);
+            logger.error("Errore durante la rimozione dell'amico {} per il giocatore {}", friendId, e.getMessage(), e);
+            throw new RuntimeException("Errore nella rimozione dell'amico " + friendId);
         }
     }
 
     public String createPlayer(String username, String password, int elo) {
         try {
-            //playerNodeDAO.createPlayer(username, elo);
-            if(playerDAO.getPlayer(username) == null) {
+
+            if (playerDAO.getPlayer(username) == null) {
                 playerDAO.createPlayer(username, password);
                 return "Giocatore creato con successo";
             } else {
