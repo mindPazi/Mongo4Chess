@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.service.PlayerService;
@@ -8,6 +10,8 @@ import com.example.demo.service.MatchService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import com.example.demo.model.Match;
 import com.example.demo.model.Tournament;
@@ -15,7 +19,6 @@ import com.example.demo.service.AdminService;
 import com.example.demo.service.TournamentService;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,51 +33,64 @@ public class AdminController {
 
     @Operation(summary = "Delete a player", description = "Deletes a player by username")
     @DeleteMapping("/player/username")
-    public ResponseEntity<String> deletePlayer(@RequestBody String username) {
+    public ResponseEntity<String> deletePlayer(@RequestParam String username) {
         playerService.deletePlayer(username);
         return ResponseEntity.ok("Player " + username + " deleted!");
     }
 
     @Operation(summary = "Ban a player", description = "Bans a player by username")
     @PatchMapping("/player/ban/player/{username}")
-    public ResponseEntity<String> banPlayer(@RequestBody String username) {
+    public ResponseEntity<String> banPlayer(@RequestParam String username) {
         playerService.banPlayer(username);
         return ResponseEntity.ok("Player " + username + " banned!");
     }
 
     @Operation(summary = "Unban a player", description = "Unbans a player by username")
     @PatchMapping("/player/unban/player/{username}")
-    public ResponseEntity<String> unbanPlayer(@RequestBody String username) {
+    public ResponseEntity<String> unbanPlayer(@RequestParam String username) {
         playerService.unBanPlayer(username);
         return ResponseEntity.ok("Player " + username + " unbanned!");
     }
 
-    @Operation(summary = "Update admin username", description = "Updates the admin's username")
-    @PutMapping("/username")
-    public ResponseEntity<String> updateAdminUsername(@RequestBody Map<String, String> requestBody) {
-        String oldUsername = requestBody.get("oldUsername");
-        String newUsername = requestBody.get("newUsername");
-
-        if (oldUsername == null || newUsername == null) {
-            return ResponseEntity.badRequest().body("Missing oldUsername or newUsername");
+    @Operation(summary = "Aggiorna il nome utente dell'admin")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Username aggiornato con successo"),
+            @ApiResponse(responseCode = "400", description = "Dati non validi")
+    })
+    @PutMapping("/admin/username")
+    public ResponseEntity<?> updateAdminUsername(@RequestParam String newUsername) {
+        if (newUsername == null || newUsername.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Dati non validi per l'aggiornamento dello username");
         }
-
-        adminService.updateAdminUsername(oldUsername, newUsername);
-        return ResponseEntity.ok("Admin username updated from " + oldUsername + " to " + newUsername + "!");
+        try {
+            adminService.updateAdminUsername(newUsername);
+            return ResponseEntity.ok("Username aggiornato con successo");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Errore durante l'aggiornamento dello username");
+        }
     }
 
-    @Operation(summary = "Update admin password", description = "Updates the admin's password")
-    @PutMapping("/password")
-    public ResponseEntity<String> updateAdminPassword(@RequestBody Map<String, String> requestBody) {
-        String username = requestBody.get("username");
-        String newPassword = requestBody.get("newPassword");
-
-        if (username == null || newPassword == null) {
-            return ResponseEntity.badRequest().body("Missing username or newPassword");
+    @Operation(summary = "Aggiorna la password dell'admin")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password aggiornata con successo"),
+            @ApiResponse(responseCode = "400", description = "Dati non validi")
+    })
+    @PutMapping("/admin/password")
+    public ResponseEntity<?> updateAdminPassword(@RequestParam String oldPassword,
+            @RequestParam String newPassword) {
+        if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Dati non validi per l'aggiornamento della password");
         }
-
-        adminService.updateAdminPassword(username, newPassword);
-        return ResponseEntity.ok("Admin password updated for " + username + "!");
+        try {
+            adminService.updateAdminPassword(oldPassword, newPassword);
+            return ResponseEntity.ok("Password aggiornata con successo");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Errore durante l'aggiornamento della password");
+        }
     }
 
     @Operation(summary = "Save a match", description = "Saves a new match to the database")

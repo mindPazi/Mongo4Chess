@@ -19,8 +19,9 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, Long> {
 
         @Query("USE chessDB " +
                         "MATCH (a:PlayerNode {id: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode {id: $playerId2}) " +
-                        "DELETE r")
-        void removeFriend(String playerId1, String playerId2);
+                        "DELETE r " +
+                        "RETURN COUNT(r)")
+        int removeFriend(String playerId1, String playerId2);
 
         @Query("USE chessDB " +
                         "MATCH (a:PlayerNode {id: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode) " +
