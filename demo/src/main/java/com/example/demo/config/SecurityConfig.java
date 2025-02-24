@@ -46,7 +46,6 @@ public class SecurityConfig {
         return provider;
     }
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -57,22 +56,33 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN") // ✅ Richiede ruolo ADMIN
                         // per /api/admin
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // ✅ Permette Swagger
-                        .requestMatchers("/api/register").permitAll() // ✅ Permette la registrazione
-                        .requestMatchers("/login").permitAll()
-                        .anyRequest().authenticated()) // All other requests must be authenticated
+                        .requestMatchers("/logout.html").permitAll() // Allow access to logout.html
+                        .anyRequest().permitAll()) // All other requests are public
+                .httpBasic(withDefaults())
                 .formLogin(form -> form
                         .successHandler(new SavedRequestAwareAuthenticationSuccessHandler())) // Use default success
-                                                                                              // handler
-                .httpBasic(httpBasic -> httpBasic.disable())
-                .exceptionHandling(exception -> exception
-                        .accessDeniedHandler(new AccessDeniedHandlerImpl() {{
-                           setErrorPage("/login"); // Redirect to login page on access denied
-                             }}))
+                // handler
 
-                /*.sessionManagement(session -> session
-                        .maximumSessions(1) // Allow only one session per user
-                        .maxSessionsPreventsLogin(true) // Prevent new login if max sessions reached
-                )*/;
+                .exceptionHandling(exception -> exception
+                        .accessDeniedHandler(new AccessDeniedHandlerImpl() {
+                            {
+                                setErrorPage("/login"); // Redirect to login page on access denied
+                            }
+                        }))
+                .logout(logout -> logout
+                        .logoutUrl("/logout") // URL to trigger logout
+                        .logoutSuccessUrl("/logout.html") // Redirect to login page after logout
+                        .invalidateHttpSession(true) // Invalidate the session
+                        .deleteCookies("JSESSIONID") // Delete the session cookie
+                        .clearAuthentication(true)); // Clear the authentication
+
+
+        /*
+         * .sessionManagement(session -> session
+         * .maximumSessions(1) // Allow only one session per user
+         * .maxSessionsPreventsLogin(true) // Prevent new login if max sessions reached
+         * )
+         */;
 
         return http.build();
     }
