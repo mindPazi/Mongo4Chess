@@ -18,6 +18,5 @@ public class DemoApplication {
 		SpringApplication.run(DemoApplication.class, args);
 		logger.info("\nApplicazione avviata correttamente!");
 		logger.info("-------------------------------------");
-		logger.info("\n!!! Gestire l'accesso con credenziali di Admin e Player!!!");
 	}
 }

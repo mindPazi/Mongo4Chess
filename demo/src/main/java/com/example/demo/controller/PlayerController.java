@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.demo.service.MatchService;
 
+//todo: fare match dto, tournament dto
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/player")

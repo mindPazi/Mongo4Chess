@@ -56,25 +56,26 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN") // ✅ Richiede ruolo ADMIN
                         // per /api/admin
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // ✅ Permette Swagger
-                        .requestMatchers("/logout.html").permitAll() // Allow access to logout.html
+                        //.requestMatchers("/logout.html").permitAll() // Allow access to logout.html
+                        .requestMatchers("/api/register").anonymous() // Allow anonymous access to /api/register
                         .anyRequest().permitAll()) // All other requests are public
                 .httpBasic(withDefaults())
-                .formLogin(form -> form
-                        .successHandler(new SavedRequestAwareAuthenticationSuccessHandler())) // Use default success
-                // handler
-
-                .exceptionHandling(exception -> exception
-                        .accessDeniedHandler(new AccessDeniedHandlerImpl() {
-                            {
-                                setErrorPage("/login"); // Redirect to login page on access denied
-                            }
-                        }))
-                .logout(logout -> logout
-                        .logoutUrl("/logout") // URL to trigger logout
-                        .logoutSuccessUrl("/logout.html") // Redirect to login page after logout
-                        .invalidateHttpSession(true) // Invalidate the session
-                        .deleteCookies("JSESSIONID") // Delete the session cookie
-                        .clearAuthentication(true)); // Clear the authentication
+//                .formLogin(form -> form
+//                        .successHandler(new SavedRequestAwareAuthenticationSuccessHandler())) // Use default success
+//                // handler
+//
+//                .exceptionHandling(exception -> exception
+//                        .accessDeniedHandler(new AccessDeniedHandlerImpl() {
+//                            {
+//                                setErrorPage("/login"); // Redirect to login page on access denied
+//                            }
+//                        }))
+//                .logout(logout -> logout
+//                        .logoutUrl("/logout") // URL to trigger logout
+//                        .logoutSuccessUrl("/logout.html") // Redirect to login page after logout
+//                        .invalidateHttpSession(true) // Invalidate the session
+//                        .deleteCookies("JSESSIONID") // Delete the session cookie
+//                        .clearAuthentication(true)); // Clear the authentication
 
 
         /*

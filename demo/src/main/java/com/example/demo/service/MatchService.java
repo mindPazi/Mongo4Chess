@@ -18,13 +18,14 @@ public class MatchService {
         this.matchDAO = matchDAO;
     }
 
+    //todo: aggiungere il match anche al player
     public void saveMatch(Match match) {
         matchDAO.saveMatch(match);
     }
 
-    public void createMatch(Match match) {
-        matchDAO.saveMatch(match);
-    }
+//    public void createMatch(Match match) {
+//        matchDAO.saveMatch(match);
+//    }
 
     public void deleteAllMatches() {
         matchDAO.deleteAllMatches();
