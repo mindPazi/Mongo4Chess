@@ -1,9 +1,12 @@
 package com.example.demo.controller;
 
 import com.example.demo.DTO.MatchDTO;
+import com.example.demo.DemoApplication;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +23,7 @@ import com.example.demo.model.Match;
 import com.example.demo.model.Tournament;
 import com.example.demo.service.AdminService;
 import com.example.demo.service.TournamentService;
+
 
 import java.util.List;
 
@@ -96,6 +100,7 @@ public class AdminController {
         }
     }
 
+    //todo: completare il test
     @Operation(summary = "Save a match", description = "Saves a new match to the database")
     @PostMapping("/match")
     public ResponseEntity<?> saveMatch(@RequestBody @Valid MatchDTO matchDTO) {
@@ -119,7 +124,7 @@ public class AdminController {
 
     @Operation(summary = "Delete matches by player", description = "Deletes all matches played by a specific player")
     @DeleteMapping("/matches/player/{username}")
-    public ResponseEntity<String> deleteAllMatchesByPlayer(@RequestBody String username) {
+    public ResponseEntity<String> deleteAllMatchesByPlayer(@PathVariable String username) {
         matchService.deleteAllMatchesByPlayer(username);
         return ResponseEntity.ok("All matches for player " + username + " deleted!");
     }

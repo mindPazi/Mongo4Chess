@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dao.PlayerDAO;
 import com.example.demo.dao.PlayerNodeDAO;
+import com.example.demo.model.Match;
 import com.example.demo.model.Player;
 import com.example.demo.model.PlayerNode;
 import lombok.Setter;
@@ -26,6 +27,7 @@ public class PlayerService {
     @Setter
     private PlayerNode playerNode;
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final static int EloConstant = 30;
 
     public PlayerService(PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO) {
         this.playerDAO = playerDAO;
@@ -149,6 +151,7 @@ public class PlayerService {
 
             if (playerDAO.getPlayer(username) == null) {
                 playerDAO.createPlayer(username, password);
+                playerNodeDAO.createPlayer(username, elo);
                 return "Giocatore creato con successo";
             } else {
                 return "Giocatore già esistente";
@@ -157,6 +160,24 @@ public class PlayerService {
             logger.error("Errore durante la creazione del giocatore {}", username, e);
             throw new RuntimeException("Errore nella creazione del giocatore " + username);
         }
+    }
+
+    // calculated with this formula: https://it.wikipedia.org/wiki/Elo_(scacchi)
+    public static List<Integer> calculateNewElo(Match match) {
+        int newWhiteElo, newBlackElo;
+        double whiteExpectedScore = expectedScore(match.getWhiteElo(), match.getBlackElo());
+        double blackExpectedScore = expectedScore(match.getBlackElo(), match.getWhiteElo());
+        double whiteScore = match.getResult().equals("1-0") ? 1 : match.getResult().equals("0-1") ? 0 : 0.5;
+        double blackScore = 1 - whiteScore;
+
+        newWhiteElo = (int) (match.getWhiteElo() + EloConstant * (whiteScore - whiteExpectedScore));
+        newBlackElo = (int) (match.getBlackElo() + EloConstant * (blackScore - blackExpectedScore));
+
+        return List.of(newWhiteElo, newBlackElo);
+    }
+
+    private static double expectedScore(int myElo, int opponentElo) {
+        return 1 / (1 + Math.pow(10, (double) (opponentElo - myElo) / 400));
     }
 
 }

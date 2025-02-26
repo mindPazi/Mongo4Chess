@@ -8,55 +8,74 @@ import org.springframework.stereotype.Repository;
 import com.example.demo.model.PlayerNode;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, Long> {
+public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
+
+        @Query("USE chessDB MATCH (p:PlayerNode {username: $username}) RETURN p.elo")
+        Optional<Integer> getElo(@Param("username") String username);
+
+        @Query(
+                "USE chessDB MATCH (a:PlayerNode {username: $username}) " +
+                       "SET a.Elo = $Elo" +
+                       "SET a.whiteWins = a.whiteWins + $whiteWins, " +
+                       "a.blackWins = a.blackWins + $blackWins, " +
+                       "a.whiteDraws = a.whiteDraws + $whiteDraws, " +
+                       "a.blackDraws = a.blackDraws + $blackDraws, " +
+                       "a.whiteLosses = a.whiteLosses + $whiteLosses, " +
+                       "a.blackLosses = a.blackLosses + $blackLosses")
+        void updatePlayerStats(String username, int Elo, int whiteWins, int blackWins, int whiteDraws,
+                               int blackDraws, int whiteLosses, int blackLosses);
+
+
 
         @Query("USE chessDB " +
-                        "MATCH (a:PlayerNode {id: $playerId1}), (b:PlayerNode {id: $playerId2}) " +
+                        "MATCH (a:PlayerNode {username: $playerId1}), (b:PlayerNode {username: $playerId2}) " +
                         "MERGE (a)-[:FRIENDS_WITH]->(b)")
         void addFriend(String playerId1, String playerId2);
 
         @Query("USE chessDB " +
-                        "MATCH (a:PlayerNode {id: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode {id: $playerId2}) " +
+                        "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode {username: $playerId2}) " +
                         "DELETE r " +
                         "RETURN COUNT(r)")
         int removeFriend(String playerId1, String playerId2);
 
         @Query("USE chessDB " +
-                        "MATCH (a:PlayerNode {id: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode) " +
+                        "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode) " +
                         "RETURN b")
         List<PlayerNode> getFriends(String playerId1);
 
-        @Query("USE chessDB " +
-                        "CREATE (p:PlayerNode {id: $id, username: $username, elo: $elo, " +
+        /*@Query("USE chessDB " +
+                        "CREATE (p:PlayerNode {username: $id, username: $username, elo: $elo, " +
                         "blackWins: 0, whiteWins: 0, whiteDraws: 0, blackDraws: 0, " +
                         "whiteLosses: 0, blackLosses: 0, isBanned: false})")
-        void addPlayer(String id, String username, int elo);
+        void addPlayer(String id, String username, int elo);*/
+
+        @Query("USE chessDB " + "CREATE (p:PlayerNode {username: $username, elo: $elo, " +
+               "blackWins: 0, whiteWins: 0, whiteDraws: 0, blackDraws: 0, " +
+               "whiteLosses: 0, blackLosses: 0}) RETURN p")
+        void createPlayer(@Param("username") String username, @Param("elo") int elo);
 
         @Query("USE chessDB " +
-                        "MATCH (p:PlayerNode {id: $playerId}) DETACH DELETE p")
+                        "MATCH (p:PlayerNode {username: $playerId}) DETACH DELETE p")
         void deletePlayer(String playerId);
 
         @Query("USE chessDB " +
-                        "MATCH (p:PlayerNode {id: $playerId}) SET p.isBanned = true")
+                        "MATCH (p:PlayerNode {username: $playerId}) SET p.isBanned = true")
         void banPlayer(String playerId);
 
         @Query("USE chessDB " +
-                        "MATCH (p:PlayerNode {id: $playerId}) SET p.isBanned = false")
+                        "MATCH (p:PlayerNode {username: $playerId}) SET p.isBanned = false")
         void unbanPlayer(String playerId);
 
         @Query("USE chessDB " +
-                        "MATCH (p:PlayerNode {id: $playerId}) RETURN p")
+                        "MATCH (p:PlayerNode {username: $playerId}) RETURN p")
         PlayerNode getPlayerById(String playerId);
 
         @Query("USE chessDB " +
                         "MATCH (p:PlayerNode) RETURN p")
         List<PlayerNode> getAllPlayers();
-
-        @Query("USE chessDB " + "CREATE (p:PlayerNode {username: $username, elo: $elo, " +
-                        "blackWins: 0, whiteWins: 0, whiteDraws: 0, blackDraws: 0, " +
-                        "whiteLosses: 0, blackLosses: 0, isBanned: false}) RETURN p")
-        PlayerNode createPlayer(@Param("username") String username, @Param("elo") int elo);
 
 }

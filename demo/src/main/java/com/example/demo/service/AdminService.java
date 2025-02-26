@@ -80,9 +80,9 @@ public class AdminService {
         playerService.deletePlayer(player);
     }
 
-    public void saveMatch(Match match) {
+    /*public void saveMatch(Match match) {
         matchService.saveMatch(match);
-    }
+    }*/
 
     public void banPlayer(String player) {
         playerService.banPlayer(player);

@@ -5,34 +5,40 @@ import com.example.demo.dao.AdminDAO;
 import lombok.RequiredArgsConstructor;
 import com.example.demo.model.Player;
 import com.example.demo.model.Admin;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+/**
+ * CustomUserDetailsService is a service that implements UserDetailsService to provide
+ * custom user authentication logic for Spring Security.
+ */
 @SuppressWarnings("unused")
 @Service
 @RequiredArgsConstructor
-public class CustomUserService implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
 
     private final PlayerService playerService;
     private final PlayerDAO playerDAO;
     private final AdminDAO adminDAO;
 
+    /**
+     * Loads the user by username. This method is used by Spring Security to
+     * authenticate a user.
+     *
+     * @param username the username identifying the user whose data is required.
+     * @return a fully populated UserDetails object (never null).
+     * @throws UsernameNotFoundException if the user could not be found or the user has no GrantedAuthority.
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Player player = playerDAO.getPlayer(username);
-        // PlayerNode playerNode = playerDAO.getPlayerNode(username);
+        //PlayerNode playerNode = playerNodeDAO.getPlayerNode(username);
         if (player != null) {
             playerService.setPlayer(player);
-            // playerService.setPlayerNode(playerNode);
+            //playerService.setPlayerNode(playerNode);
 
             return User.builder()
                     .username(player.getUsername())
@@ -50,14 +56,5 @@ public class CustomUserService implements UserDetailsService {
 
         throw new UsernameNotFoundException("User not found");
     }
-
-    /*
-     * private Collection<? extends GrantedAuthority> getAuthorities(String role) {
-     * List<GrantedAuthority> authorities = new ArrayList<>();
-     * authorities.add(new SimpleGrantedAuthority("ROLE_" + role)); // Important:
-     * Add "ROLE_" prefix
-     * return authorities;
-     * }
-     */
 
 }

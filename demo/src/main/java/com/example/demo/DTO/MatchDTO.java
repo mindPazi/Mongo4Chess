@@ -28,7 +28,7 @@ public class MatchDTO {
     private String timeControl;
 
     @NotBlank(message = "L'ECO è obbligatorio")
-    private String ECO;
+    private String eco;
 
     @NotNull(message = "Il numero di plyCount è obbligatorio")
     @Positive(message = "Il numero di plyCount deve essere positivo")

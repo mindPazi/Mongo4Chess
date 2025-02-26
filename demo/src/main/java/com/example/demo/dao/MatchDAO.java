@@ -29,9 +29,18 @@ public class MatchDAO {
                 Document matchDocument = Document.parse(match.toJson());
                 matchCollection.insertOne(matchDocument);
                 playerCollection.updateOne(new Document("username", match.getWhite()),
-                                new Document("$push", new Document("matches", matchDocument)));
+                        new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getWhite()))));
                 playerCollection.updateOne(new Document("username", match.getBlack()),
-                                new Document("$push", new Document("matches", matchDocument)));
+                        new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getBlack()))));
+        }
+
+        private Document convertMatchToDocumentForPlayer(Match match, String username) {
+                if (match.getWhite().equals(username)) {
+                        return new Document("Elo", match.getWhiteElo())
+                                .append("date", match.getDate());
+                }
+                return new Document("Elo", match.getBlackElo())
+                        .append("date", match.getDate());
         }
 
         public void deleteAllMatches() {
@@ -147,7 +156,7 @@ public class MatchDAO {
         }
 
         // Metodo per convertire un oggetto Match in un documento MongoDB
-        public Document convertMatchToDocument(Match match) {
+        private Document convertMatchToDocument(Match match) {
                 Document doc = new Document();
                 doc.append("id", match.getId());
                 doc.append("date", match.getDate());
@@ -157,7 +166,7 @@ public class MatchDAO {
                 doc.append("whiteElo", match.getWhiteElo());
                 doc.append("blackElo", match.getBlackElo());
                 doc.append("timeControl", match.getTimeControl());
-                doc.append("ECO", match.getECO());
+                doc.append("ECO", match.getEco());
                 doc.append("plyCount", match.getPlyCount());
                 doc.append("reason", match.getReason());
                 doc.append("moves", match.getMoves());
@@ -165,7 +174,7 @@ public class MatchDAO {
         }
 
         // Metodo per convertire un documento MongoDB in un oggetto Match
-        public static Match convertDocumentToMatch(Document doc) {
+        private static Match convertDocumentToMatch(Document doc) {
                 if (doc == null) {
                         return null;
                 }

@@ -27,14 +27,14 @@ public class Match {
     private int whiteElo;
     private int blackElo;
     private String timeControl;
-    private String ECO;
+    private String eco;
     private int plyCount;
     private String reason;
     private List<String> moves;
 
     // Costruttore completo
     public Match(String id, Date date, String white, String black, String result,
-            int whiteElo, int blackElo, String timeControl, String ECO,
+            int whiteElo, int blackElo, String timeControl, String eco,
             int plyCount, String reason, List<String> moves) {
         this.id = id;
         this.date = date;
@@ -44,7 +44,7 @@ public class Match {
         this.whiteElo = whiteElo;
         this.blackElo = blackElo;
         this.timeControl = timeControl;
-        this.ECO = ECO;
+        this.eco = eco;
         this.plyCount = plyCount;
         this.reason = reason;
         this.moves = moves;
