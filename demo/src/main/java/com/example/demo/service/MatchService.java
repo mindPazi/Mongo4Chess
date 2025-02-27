@@ -30,25 +30,31 @@ public class MatchService {
         Optional<Integer> blackEloOpt = playerNodeDAO.getElo(match.getBlack());
 
         if (whiteEloOpt.isEmpty() || blackEloOpt.isEmpty()) {
-            throw new Exception("One or both players do not exist");
+            throw new Exception("Uno o entrambi i giocatori non esistono");
         }
 
         match.setWhiteElo(whiteEloOpt.get());
         match.setBlackElo(blackEloOpt.get());
 
         //calculate new Elo
-        List<Integer> newElos = PlayerService.calculateNewElo(match);
+        List<Integer> deltaElos = new java.util.ArrayList<>(PlayerService.calculateNewElo(match));
+
+        // se l'aggiornamento dell'elo è negativo, lo setta a 0
+        if (match.getWhiteElo() - deltaElos.get(0) < 0)
+            deltaElos.set(0, 0);
+        if (match.getBlackElo() - deltaElos.get(1) < 0)
+            deltaElos.set(1, 0);
 
         //aggiorna le statistiche del giocatore sul nodo
-        if(match.getResult().equals("1-0")) {
-            playerNodeDAO.updatePlayerStats(match.getWhite(), newElos.get(0), 1, 0, 0, 0, 0, 0);
-            playerNodeDAO.updatePlayerStats(match.getBlack(), newElos.get(1), 0, 0, 0, 0, 0, 1);
-        } else if(match.getResult().equals("0-1")) {
-            playerNodeDAO.updatePlayerStats(match.getWhite(), newElos.get(0), 0, 0, 0, 0, 1, 0);
-            playerNodeDAO.updatePlayerStats(match.getBlack(), newElos.get(1), 0, 1, 0, 0, 0, 0);
+        if (match.getResult().equals("1-0")) {
+            playerNodeDAO.updatePlayerStats(match.getWhite(), deltaElos.get(0), 1, 0, 0, 0, 0, 0);
+            playerNodeDAO.updatePlayerStats(match.getBlack(), deltaElos.get(1), 0, 0, 0, 0, 0, 1);
+        } else if (match.getResult().equals("0-1")) {
+            playerNodeDAO.updatePlayerStats(match.getWhite(), deltaElos.get(0), 0, 0, 0, 0, 1, 0);
+            playerNodeDAO.updatePlayerStats(match.getBlack(), deltaElos.get(1), 0, 1, 0, 0, 0, 0);
         } else {
-            playerNodeDAO.updatePlayerStats(match.getWhite(), newElos.get(0), 0, 0, 1, 0, 0, 0);
-            playerNodeDAO.updatePlayerStats(match.getBlack(), newElos.get(1), 0, 0, 0, 1, 0, 0);
+            playerNodeDAO.updatePlayerStats(match.getWhite(), deltaElos.get(0), 0, 0, 1, 0, 0, 0);
+            playerNodeDAO.updatePlayerStats(match.getBlack(), deltaElos.get(1), 0, 0, 0, 1, 0, 0);
         }
 
     }

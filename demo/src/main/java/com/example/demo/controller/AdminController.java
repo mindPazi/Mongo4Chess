@@ -111,6 +111,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.CREATED).body(match); // Restituisci l'oggetto Match creato (o un DTO di risposta)
         } catch (Exception e) {
             // Gestione degli errori
+            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body("Errore durante la creazione del match");
         }
     }

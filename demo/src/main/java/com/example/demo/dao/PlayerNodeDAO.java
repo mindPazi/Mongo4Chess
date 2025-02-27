@@ -17,17 +17,15 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
         @Query("USE chessDB MATCH (p:PlayerNode {username: $username}) RETURN p.elo")
         Optional<Integer> getElo(@Param("username") String username);
 
-        @Query(
-                "USE chessDB MATCH (a:PlayerNode {username: $username}) " +
-                       "SET a.Elo = $Elo" +
-                       "SET a.whiteWins = a.whiteWins + $whiteWins, " +
-                       "a.blackWins = a.blackWins + $blackWins, " +
-                       "a.whiteDraws = a.whiteDraws + $whiteDraws, " +
-                       "a.blackDraws = a.blackDraws + $blackDraws, " +
-                       "a.whiteLosses = a.whiteLosses + $whiteLosses, " +
-                       "a.blackLosses = a.blackLosses + $blackLosses")
-        void updatePlayerStats(String username, int Elo, int whiteWins, int blackWins, int whiteDraws,
-                               int blackDraws, int whiteLosses, int blackLosses);
+        @Query("USE chessDB MATCH (a:PlayerNode {username: $username}) " +
+               "SET a.elo = $elo, a.whiteWins = a.whiteWins + $whiteWins, " +
+               "a.blackWins = a.blackWins + $blackWins, a.whiteDraws = a.whiteDraws + $whiteDraws, " +
+               "a.blackDraws = a.blackDraws + $blackDraws, a.whiteLosses = a.whiteLosses + $whiteLosses, " +
+               "a.blackLosses = a.blackLosses + $blackLosses")
+        void updatePlayerStats(@Param("username") String username, @Param("elo") int elo,
+                               @Param("whiteWins") int whiteWins, @Param("blackWins") int blackWins,
+                               @Param("whiteDraws") int whiteDraws, @Param("blackDraws") int blackDraws,
+                               @Param("whiteLosses") int whiteLosses, @Param("blackLosses") int blackLosses);
 
 
 

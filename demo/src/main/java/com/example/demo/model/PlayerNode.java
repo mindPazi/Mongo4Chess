@@ -33,7 +33,8 @@ public class PlayerNode {
     @Property("blackLosses")
     private int blackLosses;
     //is banned è già salvato in mongo
-    //private boolean isBanned;
+//    @Property("isBanned")
+//    private boolean isBanned;
 
     // Costruttore senza parametri (necessario per Spring Data Neo4j)
     public PlayerNode() {
