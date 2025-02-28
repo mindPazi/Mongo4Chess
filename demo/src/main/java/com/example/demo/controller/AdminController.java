@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.DTO.MatchDTO;
+import com.example.demo.DTO.TournamentDTO;
 import com.example.demo.DemoApplication;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.service.PlayerService;
 import com.example.demo.service.MatchService;
@@ -27,6 +30,8 @@ import com.example.demo.service.TournamentService;
 
 import java.util.List;
 
+//todo: aggiungere update positions(dei tornei)
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
@@ -41,22 +46,34 @@ public class AdminController {
     @Operation(summary = "Delete a player", description = "Deletes a player by username")
     @DeleteMapping("/player/{username}")
     public ResponseEntity<String> deletePlayer(@PathVariable String username) {
-        playerService.deletePlayer(username);
-        return ResponseEntity.ok("Player " + username + " deleted!");
+        try {
+            playerService.deletePlayer(username);
+            return ResponseEntity.ok("Player " + username + " deleted!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Ban a player", description = "Bans a player by username")
     @PatchMapping("/player/ban/player/{username}")
     public ResponseEntity<String> banPlayer(@PathVariable String username) {
-        playerService.banPlayer(username);
-        return ResponseEntity.ok("Player " + username + " banned!");
+        try {
+            playerService.banPlayer(username);
+            return ResponseEntity.ok("Player " + username + " banned!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Unban a player", description = "Unbans a player by username")
     @PatchMapping("/player/unban/player/{username}")
     public ResponseEntity<String> unbanPlayer(@PathVariable String username) {
-        playerService.unBanPlayer(username);
-        return ResponseEntity.ok("Player " + username + " unbanned!");
+        try {
+            playerService.unBanPlayer(username);
+            return ResponseEntity.ok("Player " + username + " unbanned!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Aggiorna il nome utente dell'admin")
@@ -100,7 +117,6 @@ public class AdminController {
         }
     }
 
-    //todo: completare il test
     @Operation(summary = "Save a match", description = "Saves a new match to the database")
     @PostMapping("/match")
     public ResponseEntity<?> saveMatch(@RequestBody @Valid MatchDTO matchDTO) {
@@ -112,7 +128,7 @@ public class AdminController {
         } catch (Exception e) {
             // Gestione degli errori
             System.out.println(e.getMessage());
-            return ResponseEntity.internalServerError().body("Errore durante la creazione del match");
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -130,11 +146,40 @@ public class AdminController {
         return ResponseEntity.ok("All matches for player " + username + " deleted!");
     }
 
+    @Operation(summary = "Crea un nuovo torneo")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Torneo creato con successo"),
+            @ApiResponse(responseCode = "400", description = "Richiesta non valida")
+    })
+    @PostMapping("/tournament/create")
+    public ResponseEntity<?> createTournament(@RequestBody @Valid TournamentDTO tournamentDTO) {
+        try {
+            // Ottieni l'utente autenticato
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = authentication.getName();
+
+            Tournament tournament = new Tournament();
+            BeanUtils.copyProperties(tournamentDTO, tournament);
+            tournament.setCreator(currentUsername);
+            tournament.setIsClosed(false);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(tournamentService.createTournament(tournament));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Errore durante la creazione del torneo:" + e.getMessage());
+        }
+    }
+
     @Operation(summary = "Add winner to tournament", description = "Adds a winner to the specified tournament")
-    @PatchMapping("/tournament/{id}/winner")
-    public ResponseEntity<String> addWinner(@PathVariable String id, @RequestParam String winner) {
-        tournamentService.addWinner(id, winner);
-        return ResponseEntity.ok("Winner " + winner + " added to tournament " + id);
+    @PatchMapping("/tournament/winner/{id}/{winner}")
+    public ResponseEntity<String> addWinner(@PathVariable String id, @PathVariable String winner) {
+        try {
+            tournamentService.addWinner(id, winner);
+            return ResponseEntity.ok("Winner " + winner + " added to tournament " + id);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error adding winner: " + e.getMessage());
+        }
     }
 
     @Operation(summary = "Get all tournaments", description = "Fetches all tournaments from the database")
@@ -144,9 +189,9 @@ public class AdminController {
     }
 
     @Operation(summary = "Add player to tournament", description = "Adds a player to a specific tournament")
-    @PatchMapping("/tournament/{tournamentId}/addPlayer")
+    @PatchMapping("/tournament/addPlayer/{tournamentId}/{playerId}")
     public ResponseEntity<String> addPlayerToTournament(@PathVariable String tournamentId,
-                                                        @RequestParam String playerId) {
+                                                        @PathVariable String playerId) {
         try {
             tournamentService.addPlayer(tournamentId, playerId);
             return ResponseEntity.ok("Player " + playerId + " added to tournament " + tournamentId);
@@ -156,9 +201,9 @@ public class AdminController {
     }
 
     @Operation(summary = "Remove player from tournament", description = "Removes a player from a specific tournament")
-    @PatchMapping("/tournament/{tournamentId}/removePlayer")
+    @PatchMapping("/tournament/removePlayer/{tournamentId}/{playerId}")
     public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
-                                                             @RequestParam String playerId) {
+                                                             @PathVariable String playerId) {
         try {
             tournamentService.removePlayer(tournamentId, playerId);
             return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);

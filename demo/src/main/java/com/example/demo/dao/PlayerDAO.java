@@ -32,11 +32,14 @@ public class PlayerDAO {
 
     public void unBanPlayer(String username) {
         playerCollection.updateOne(new Document("username", username),
-                new Document("$set", new Document("isBanned", false)));
+                new Document("$unset", new Document("isBanned", "")));
     }
 
     public void deletePlayer(String username) {
-        playerCollection.deleteOne(new Document("username", username));
+        long deletedCount = playerCollection.deleteOne(new Document("username", username)).getDeletedCount();
+        if (deletedCount == 0) {
+            throw new RuntimeException("Giocatore non trovato con username: " + username);
+        }
     }
 
     public void updatePlayerPassword(String username, String newPassword) {
@@ -94,7 +97,7 @@ public class PlayerDAO {
         Player player = new Player();
         player.setUsername(doc.getString("username"));
         player.setPassword(doc.getString("password"));
-        player.setIsBanned(doc.getBoolean("banned", false));
+        player.setIsBanned(doc.getBoolean("isBanned", false));
         player.setMatches((List<Match>) doc.get("matches"));
         return player;
     }

@@ -8,7 +8,6 @@ import java.util.List;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-//todo: assicurarsi che l'Elo venga aggiunto nel db dal sistema e non con il post del match
 @Data
 public class MatchDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")

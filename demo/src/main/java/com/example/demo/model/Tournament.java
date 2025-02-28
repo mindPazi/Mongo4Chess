@@ -20,7 +20,7 @@ public class Tournament {
     private Boolean isClosed;
     private int eloMin;
     private int eloMax;
-    private Player winner;
+    private String winner;
     // lista dei giocatori iscritti al torneo, con la posizione raggiunta
     private List<Map<String, Integer>> players = new ArrayList<>();
     // lista delle partite più importanti del torneo

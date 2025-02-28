@@ -40,9 +40,9 @@ public class MatchService {
         List<Integer> deltaElos = new java.util.ArrayList<>(PlayerService.calculateNewElo(match));
 
         // se l'aggiornamento dell'elo è negativo, lo setta a 0
-        if (match.getWhiteElo() - deltaElos.get(0) < 0)
+        if (match.getWhiteElo() + deltaElos.get(0) < 0)
             deltaElos.set(0, 0);
-        if (match.getBlackElo() - deltaElos.get(1) < 0)
+        if (match.getBlackElo() + deltaElos.get(1) < 0)
             deltaElos.set(1, 0);
 
         //aggiorna le statistiche del giocatore sul nodo

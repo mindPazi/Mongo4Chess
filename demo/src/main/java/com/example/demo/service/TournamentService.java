@@ -4,7 +4,9 @@ import com.example.demo.model.Match;
 import com.example.demo.model.Player;
 import com.example.demo.model.Tournament;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +34,7 @@ public class TournamentService {
         this.playerDAO = playerDAO;
     }
 
-    public Tournament createTournament(Tournament tournament) {
+    public Tournament createTournament(Tournament tournament) throws RuntimeException {
         return tournamentDAO.createTournament(tournament);
     }
 
@@ -41,12 +43,11 @@ public class TournamentService {
         return "Tournament deleted successfully: " + tournamentId;
     }
 
-    public String addWinner(String tournamentId, String winnerUsername) {
-        Player winner = new Player();
-        winner.setUsername(winnerUsername);
-
-        tournamentDAO.addWinner(tournamentId, winner);
-        return "Winner added successfully: " + winnerUsername + " to tournament: " + tournamentId;
+    public void addWinner(String tournamentId, String winnerUsername) throws RuntimeException {
+        if (playerDAO.getPlayer(winnerUsername) == null) {
+            throw new RuntimeException("Player not found");
+        }
+        tournamentDAO.addWinner(tournamentId, winnerUsername);
     }
 
     public List<Tournament> getAllTournaments() {
@@ -111,20 +112,39 @@ public class TournamentService {
         }
     }
 
-    public void addPlayer(String tournamentId, String playerId) {
-        try {
-            tournamentDAO.addPlayer(tournamentId, playerId);
+    public void addPlayer(String tournamentId, String playerId) throws RuntimeException {
+            if(playerDAO.getPlayer(playerId) == null) {
+                throw new RuntimeException("Player not found");
+            }
+
+            Tournament tournament = tournamentDAO.getTournament(tournamentId);
+
+            if(tournament.getIsClosed()) {
+                throw new RuntimeException("Torneo chiuso");
+            }
+            if(tournament.getPlayers().stream().anyMatch(playerMap -> playerMap.containsKey(playerId))) {
+                throw new RuntimeException("Giocatore già iscritto");
+            }
+            if(tournament.getPlayers().size()>=tournament.getMaxPlayers()) {
+                throw new RuntimeException("Torneo pieno");
+            }
+
+            Map<String, Integer> playerEntry = new HashMap<>();
+            playerEntry.put(playerId, 0);
+            tournamentDAO.addPlayer(tournamentId, playerEntry);
+
+            if(tournament.getPlayers().size() == tournament.getMaxPlayers()) {
+                tournamentDAO.closeTournament(tournamentId);
+            }
+
             logger.info("Giocatore {} aggiunto con successo al torneo {}", playerId, tournamentId);
-        } catch (Exception e) {
-            logger.error("Errore durante l'aggiunta del giocatore {} al torneo {}", playerId, tournamentId, e);
-            throw new RuntimeException(
-                    "Errore nell'aggiungere il giocatore " + playerId + " al torneo " + tournamentId);
-        }
     }
 
     public void removePlayer(String tournamentId, String playerId) {
         try {
+            //todo: capire perchè non rimuove il giocatore correttamente
             tournamentDAO.removePlayer(tournamentId, playerId);
+            tournamentDAO.openTournament(tournamentId);
             logger.info("Giocatore {} rimosso con successo dal torneo {}", playerId, tournamentId);
         } catch (Exception e) {
             logger.error("Errore durante la rimozione del giocatore {} dal torneo {}", playerId, tournamentId, e);

@@ -1,6 +1,8 @@
 package com.example.demo.dao;
 
 import com.example.demo.model.Tournament;
+import com.mongodb.BasicDBObject;
+import com.mongodb.client.result.UpdateResult;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 import com.example.demo.model.Player;
@@ -9,7 +11,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class TournamentDAO {
@@ -19,9 +23,16 @@ public class TournamentDAO {
         this.mongoTemplate = mongoTemplate;
     }
 
-    public void saveTournament(Tournament tournament) {
-        mongoTemplate.save(tournament, "TournamentCollection");
-        System.out.println("Tournament saved successfully: " + tournament.toString());
+    // Metodo per creare e salvare un torneo
+    public Tournament createTournament(Tournament tournament) {
+        try {
+            Tournament savedTournament = mongoTemplate.save(tournament, "TournamentCollection");
+            System.out.println("Tournament created successfully: " + savedTournament.getId());
+            return savedTournament;
+        } catch (Exception e) {
+            System.out.println("Error creating tournament: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public void deleteTournament(String tournamentId) {
@@ -34,14 +45,15 @@ public class TournamentDAO {
         System.out.println("Tournament updated successfully: " + tournament);
     }
 
-    public void addWinner(String tournamentId, Player winner) {
+    public void addWinner(String tournamentId, String winner) {
         Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
         if (tournament != null) {
-            tournament.setWinner(winner);
-            mongoTemplate.save(tournament);
+            Query query = new Query(Criteria.where("id").is(tournamentId));
+            Update update = new Update().set("winner", winner);
+            mongoTemplate.updateFirst(query, update, Tournament.class);
             System.out.println("Winner added successfully: " + winner + " to tournament: " + tournamentId);
         } else {
-            System.out.println("Tournament not found: " + tournamentId);
+            throw new RuntimeException("Torneo non esistente: " + tournamentId);
         }
     }
 
@@ -111,26 +123,46 @@ public class TournamentDAO {
     }
 
     // Aggiunge un giocatore al torneo
-    public void addPlayer(String tournamentId, String playerId) {
+    public void addPlayer(String tournamentId, Map<String,Integer> player) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
-        Update update = new Update().push("players", playerId);
+        Update update = new Update().push("players", player);
         mongoTemplate.updateFirst(query, update, Tournament.class);
-        System.out.println("Giocatore " + playerId + " aggiunto al torneo: " + tournamentId);
+        System.out.println("Giocatore " + player.keySet().iterator().next() + " aggiunto al torneo: " + tournamentId);
     }
 
     // Rimuove un giocatore dal torneo
-    public void removePlayer(String tournamentId, String playerId) {
+    public void removePlayer(String tournamentId, String player) {
+        Query query = new Query(Criteria.where("id").is(tournamentId).and("players." + player).exists(true));
+        Update update = new Update().pull("players", Collections.singletonMap(player,0));
+        UpdateResult result = mongoTemplate.updateFirst(query, update, Tournament.class);
+        if (result.getModifiedCount() > 0) {
+            System.out.println("Giocatore " + player + " rimosso dal torneo: " + tournamentId);
+        } else {
+            System.out.println("Giocatore " + player + " non trovato o non rimosso dal torneo: " + tournamentId);
+        }
+    }
+
+
+    public Tournament getTournament(String tournamentId) {
+        try{
+            return mongoTemplate.findById(tournamentId, Tournament.class, "TournamentCollection");
+        } catch (Exception e) {
+            System.out.println("Error getting tournament: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public void closeTournament(String tournamentId) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
-        Update update = new Update().pull("players", playerId);
+        Update update = new Update().set("closed", true);
         mongoTemplate.updateFirst(query, update, Tournament.class);
-        System.out.println("Giocatore " + playerId + " rimosso dal torneo: " + tournamentId);
+        System.out.println("Tournament closed successfully: " + tournamentId);
     }
 
-    // Metodo per creare e salvare un torneo
-    public Tournament createTournament(Tournament tournament) {
-        Tournament savedTournament = mongoTemplate.save(tournament, "TournamentCollection");
-        System.out.println("Tournament created successfully: " + savedTournament.getId());
-        return savedTournament;
+    public void openTournament(String tournamentId) {
+        Query query = new Query(Criteria.where("id").is(tournamentId));
+        Update update = new Update().set("closed", false);
+        mongoTemplate.updateFirst(query, update, Tournament.class);
+        System.out.println("Tournament opened successfully: " + tournamentId);
     }
-
 }

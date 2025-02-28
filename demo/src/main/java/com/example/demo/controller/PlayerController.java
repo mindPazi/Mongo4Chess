@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.DTO.TournamentDTO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.example.demo.model.Match;
 import com.example.demo.service.PlayerService;
@@ -7,10 +9,15 @@ import com.example.demo.service.TournamentService;
 import com.example.demo.model.Tournament;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -69,21 +76,25 @@ public class PlayerController {
             @ApiResponse(responseCode = "400", description = "Richiesta non valida")
     })
     @PostMapping("/tournament/create")
-    public ResponseEntity<?> createTournament(@RequestBody Tournament tournament) {
-        if (tournament == null ||
-                tournament.getId() == null || tournament.getId().isEmpty() ||
-                tournament.getWinner() == null) {
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Torneo non valido. L'ID e il vincitore sono obbligatori.");
-        }
+    public ResponseEntity<?> createTournament(@RequestBody @Valid TournamentDTO tournamentDTO) {
 
         try {
-            tournamentService.createTournament(tournament);
-            return ResponseEntity.status(HttpStatus.CREATED).body(tournament);
+            // Ottieni l'utente autenticato
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = authentication.getName();
+
+            // Copia i campi del DTO in un oggetto Tournament
+            Tournament tournament = new Tournament();
+            BeanUtils.copyProperties(tournamentDTO, tournament);
+            tournament.setCreator(currentUsername);
+            tournament.setIsClosed(false);
+
+            // Crea il torneo
+            return ResponseEntity.status(HttpStatus.CREATED).body(tournamentService.createTournament(tournament));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante la creazione del torneo");
+                    .body("Errore durante la creazione del torneo:"+e.getMessage());
         }
     }
 

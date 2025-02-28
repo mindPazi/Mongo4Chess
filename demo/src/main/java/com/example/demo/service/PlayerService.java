@@ -37,7 +37,7 @@ public class PlayerService {
     public void banPlayer(String playerUsername) {
         try {
             playerDAO.banPlayer(playerUsername);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Errore durante il ban del giocatore: {}", playerUsername, e);
             throw new RuntimeException("Errore nel bannare il giocatore: " + playerUsername);
         }
@@ -52,13 +52,8 @@ public class PlayerService {
         }
     }
 
-    public void deletePlayer(String playerUsername) {
-        try {
+    public void deletePlayer(String playerUsername) throws RuntimeException{
             playerDAO.deletePlayer(playerUsername);
-        } catch (Exception e) {
-            logger.error("Errore durante l'eliminazione del giocatore: {}", playerUsername, e);
-            throw new RuntimeException("Errore nell'eliminare il giocatore: " + playerUsername);
-        }
     }
 
     public void updatePlayerPassword(String oldPassword, String newPassword) {
