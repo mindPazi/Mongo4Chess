@@ -7,6 +7,7 @@ import com.example.demo.model.Tournament;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,12 @@ public class TournamentService {
         return tournamentDAO.createTournament(tournament);
     }
 
-    public String deleteTournament(String tournamentId) {
+    public void deleteTournament(String tournamentId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(!Objects.equals(authentication.getName(), tournamentDAO.getTournament(tournamentId).getCreator())) {
+            throw new RuntimeException("Non sei il creatore del torneo");
+        }
         tournamentDAO.deleteTournament(tournamentId);
-        return "Tournament deleted successfully: " + tournamentId;
     }
 
     public void addWinner(String tournamentId, String winnerUsername) throws RuntimeException {
@@ -98,7 +102,7 @@ public class TournamentService {
         }
     }
 
-    public String getCreatedTournaments(String creator) {
+    public List<Tournament> getCreatedTournaments(String creator) {
         return tournamentDAO.getCreatedTournaments(creator);
     }
 

@@ -60,13 +60,14 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
                         "MATCH (p:PlayerNode {username: $playerId}) DETACH DELETE p")
         void deletePlayer(String playerId);
 
-        @Query("USE chessDB " +
-                        "MATCH (p:PlayerNode {username: $playerId}) SET p.isBanned = true")
-        void banPlayer(String playerId);
-
-        @Query("USE chessDB " +
-                        "MATCH (p:PlayerNode {username: $playerId}) SET p.isBanned = false")
-        void unbanPlayer(String playerId);
+        //il campo ban è solo su mongo
+//        @Query("USE chessDB " +
+//                        "MATCH (p:PlayerNode {username: $playerId}) SET p.isBanned = true")
+//        void banPlayer(String playerId);
+//
+//        @Query("USE chessDB " +
+//                        "MATCH (p:PlayerNode {username: $playerId}) SET p.isBanned = false")
+//        void unbanPlayer(String playerId);
 
         @Query("USE chessDB " +
                         "MATCH (p:PlayerNode {username: $playerId}) RETURN p")
@@ -76,4 +77,7 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
                         "MATCH (p:PlayerNode) RETURN p")
         List<PlayerNode> getAllPlayers();
 
+        @Query("USE chessDB " +
+                        "MATCH (p:PlayerNode {username: $playerId}) RETURN p")
+        PlayerNode getStats(String playerId);
 }

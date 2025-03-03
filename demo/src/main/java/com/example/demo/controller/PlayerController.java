@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
+import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
+import com.example.demo.model.PlayerNode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.example.demo.model.Match;
@@ -27,7 +29,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.demo.service.MatchService;
 
-//todo: fare match dto, tournament dto
+//todo: delete friend
+//todo: continuare a testare le get
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/player")
@@ -49,24 +52,24 @@ public class PlayerController {
             @ApiResponse(responseCode = "400", description = "Richiesta non valida")
     })
     @PostMapping("/match")
-    public ResponseEntity<?> createMatch(@RequestBody Match match) {
-        if (match == null ||
-                match.getWhite() == null || match.getWhite().isEmpty() ||
-                match.getBlack() == null || match.getBlack().isEmpty() ||
-                match.getMoves() == null || match.getMoves().isEmpty() ||
-                match.getWhiteElo() == 0 ||
-                match.getBlackElo() == 0) {
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Match non valido. Tutti i campi obbligatori devono essere presenti.");
-        }
-
+    public ResponseEntity<?> saveMatch(@RequestBody @Valid MatchDTO matchDTO) {
         try {
+            Match match = new Match();
+            BeanUtils.copyProperties(matchDTO, match);
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = authentication.getName();
+
+            if (!match.getWhite().equals(currentUsername) && !match.getBlack().equals(currentUsername)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Devi essere uno dei giocatori per salvare un match");
+            }
+
             matchService.saveMatch(match);
-            return ResponseEntity.ok(match);
+            return ResponseEntity.status(HttpStatus.CREATED).body(match); // Restituisci l'oggetto Match creato
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante la creazione del match");
+            // Gestione degli errori
+            System.out.println(e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -89,12 +92,14 @@ public class PlayerController {
             tournament.setCreator(currentUsername);
             tournament.setIsClosed(false);
 
+            Tournament createdTournament = tournamentService.createTournament(tournament);
+
             // Crea il torneo
-            return ResponseEntity.status(HttpStatus.CREATED).body(tournamentService.createTournament(tournament));
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdTournament);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante la creazione del torneo:"+e.getMessage());
+                    .body("Errore durante la creazione del torneo: " + e.getMessage());
         }
     }
 
@@ -103,16 +108,16 @@ public class PlayerController {
             @ApiResponse(responseCode = "204", description = "Torneo eliminato con successo"),
             @ApiResponse(responseCode = "404", description = "Torneo non trovato")
     })
-    @DeleteMapping("/tournament")
-    public ResponseEntity<?> deleteTournament(@RequestBody String tournamentid) {
-        if (tournamentid == null || tournamentid.isEmpty()) {
+    @DeleteMapping("/tournament/delete/{tournamentId}")
+    public ResponseEntity<?> deleteTournament(@PathVariable String tournamentId) {
+        if (tournamentId == null || tournamentId.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID torneo non valido");
         }
         try {
-            tournamentService.deleteTournament(tournamentid);
+            tournamentService.deleteTournament(tournamentId);
             return ResponseEntity.ok("Torneo eliminato con successo");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Torneo non trovato");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
@@ -120,9 +125,14 @@ public class PlayerController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Statistiche ottenute con successo")
     })
-    @GetMapping("/stats")
-    public ResponseEntity<String> getStats() {
-        return ResponseEntity.ok("Stats");
+    @GetMapping("/stats/{playerId}")
+    public ResponseEntity<?> getStats(@PathVariable String playerId) {
+        try {
+            return ResponseEntity.ok(playerService.getStats(playerId));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Errore durante il recupero delle statistiche: " + e.getMessage());
+        }
     }
 
     @Operation(summary = "Aggiorna il nome utente del giocatore")
@@ -152,7 +162,7 @@ public class PlayerController {
     })
     @PutMapping("/password")
     public ResponseEntity<?> updatePlayerPassword(@RequestParam String old_password,
-            @RequestParam String new_password) {
+                                                  @RequestParam String new_password) {
         if (old_password == null || old_password.isEmpty() || new_password == null || new_password.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Dati non validi per l'aggiornamento della password");
@@ -171,9 +181,9 @@ public class PlayerController {
             @ApiResponse(responseCode = "200", description = "Partite aggiunte con successo"),
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
-    @PostMapping("/most_important_matches")
+    @PatchMapping("/most_important_matches")
     public ResponseEntity<?> addMostImportantMatches(@RequestBody List<Match> matches,
-            @RequestBody String tournamentId) {
+                                                     @RequestBody String tournamentId) {
         if (matches == null || matches.isEmpty() || tournamentId == null || tournamentId.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Dati non validi per aggiungere le partite");
         }
@@ -192,7 +202,7 @@ public class PlayerController {
             @ApiResponse(responseCode = "400", description = "Dati non validi"),
             @ApiResponse(responseCode = "500", description = "Errore interno del server")
     })
-    @PostMapping("/tournament/join")
+    @PatchMapping("/tournament/join")
     public ResponseEntity<String> joinTournament(
             @RequestParam @Parameter(description = "ID del torneo a cui unirsi", required = true) String tournamentId) {
 
@@ -243,8 +253,8 @@ public class PlayerController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Elenco tornei creati ottenuto con successo")
     })
-    @GetMapping("/tournament/created")
-    public ResponseEntity<String> getCreatedTournaments(@RequestParam String creator) {
+    @GetMapping("/tournament/created/{creator}")
+    public ResponseEntity<List<Tournament>> getCreatedTournaments(@PathVariable String creator) {
         return ResponseEntity.ok(tournamentService.getCreatedTournaments(creator));
     }
 

@@ -92,27 +92,29 @@ public class TournamentDAO {
         }
     }
 
-    public void deletePlayerFromTournament(String tournamentId, String playerUsername) {
-        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
-        if (tournament != null) {
-            tournament.removePlayer(playerUsername);
-            mongoTemplate.save(tournament);
-            System.out.println("Player removed from tournament successfully: " + playerUsername + " from tournament: "
-                    + tournamentId);
-        } else {
-            System.out.println("Tournament not found: " + tournamentId);
-        }
-    }
+//    public void deletePlayerFromTournament(String tournamentId, String playerUsername) {
+//        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
+//        if (tournament != null) {
+//            tournament.removePlayer(playerUsername);
+//            mongoTemplate.save(tournament);
+//            System.out.println("Player removed from tournament successfully: " + playerUsername + " from tournament: "
+//                    + tournamentId);
+//        } else {
+//            System.out.println("Tournament not found: " + tournamentId);
+//        }
+//    }
 
-    public String getCreatedTournaments(String creator) {
-        List<Tournament> tournaments = mongoTemplate.find(new Query(), Tournament.class, "TournamentCollection");
-        StringBuilder createdTournaments = new StringBuilder();
-        for (Tournament tournament : tournaments) {
-            if (tournament.getCreator().equals(creator)) {
-                createdTournaments.append(tournament.toString());
-            }
-        }
-        return createdTournaments.toString();
+    public List<Tournament> getCreatedTournaments(String creator) {
+        Query query = new Query(Criteria.where("creator").is(creator));
+        return mongoTemplate.find(query, Tournament.class, "TournamentCollection");
+
+//        StringBuilder createdTournaments = new StringBuilder();
+//        for (Tournament tournament : tournaments) {
+//            if (tournament.getCreator().equals(creator)) {
+//                createdTournaments.append(tournament.toString());
+//            }
+//        }
+//        return createdTournaments.toString();
     }
 
     public void addMatch(String tournamentId, Match match) {

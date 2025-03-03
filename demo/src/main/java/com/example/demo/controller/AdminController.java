@@ -4,11 +4,14 @@ import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
 import com.example.demo.DemoApplication;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Past;
 import lombok.RequiredArgsConstructor;
 
+import org.hibernate.validator.internal.constraintvalidators.bv.time.pastorpresent.PastOrPresentValidatorForDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -28,6 +31,7 @@ import com.example.demo.service.AdminService;
 import com.example.demo.service.TournamentService;
 
 
+import java.util.Date;
 import java.util.List;
 
 //todo: aggiungere update positions(dei tornei)
@@ -137,6 +141,14 @@ public class AdminController {
     public ResponseEntity<String> deleteAllMatches() {
         matchService.deleteAllMatches();
         return ResponseEntity.ok("All matches deleted!");
+    }
+
+    // i match vengono eliminati solo dalla collection dei match, rimangono nei player per tenere la statistica dell'andamento dell'elo
+    @Operation(summary="Delete matches before a date", description="Deletes all matches played before a specific date")
+    @DeleteMapping("/matches/before/{date}")
+    public ResponseEntity<String> deleteMatchesBeforeDate(@PathVariable @Valid @Past @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date date) {
+        matchService.deleteMatchesBeforeDate(date);
+        return ResponseEntity.ok("All matches before " + date + " deleted!");
     }
 
     @Operation(summary = "Delete matches by player", description = "Deletes all matches played by a specific player")

@@ -6,6 +6,7 @@ import org.bson.Document;
 
 import com.example.demo.model.Match;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +32,10 @@ public class MatchService {
 
         if (whiteEloOpt.isEmpty() || blackEloOpt.isEmpty()) {
             throw new Exception("Uno o entrambi i giocatori non esistono");
+        }
+
+        if(match.getWhite().equals(match.getBlack())){
+            throw new Exception("Un giocatore non può giocare contro se stesso");
         }
 
         match.setWhiteElo(whiteEloOpt.get());
@@ -89,5 +94,9 @@ public class MatchService {
 
     public List<Document> getMostPlayedOpeningsPerElo(int elomin, int elomax) {
         return matchDAO.getMostPlayedOpeningsPerElo(elomin, elomax);
+    }
+
+    public void deleteMatchesBeforeDate(Date date) {
+        matchDAO.deleteMatchesBeforeDate(date);
     }
 }

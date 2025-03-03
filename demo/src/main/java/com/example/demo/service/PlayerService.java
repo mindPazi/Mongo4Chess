@@ -54,6 +54,7 @@ public class PlayerService {
 
     public void deletePlayer(String playerUsername) throws RuntimeException{
             playerDAO.deletePlayer(playerUsername);
+            playerNodeDAO.deletePlayer(playerUsername);
     }
 
     public void updatePlayerPassword(String oldPassword, String newPassword) {
@@ -93,13 +94,9 @@ public class PlayerService {
         }
     }
 
-    public void getStats() {
-        try {
-            playerDAO.getStats();
-        } catch (Exception e) {
-            logger.error("Errore durante il recupero delle statistiche", e);
-            throw new RuntimeException("Errore nel recupero delle statistiche");
-        }
+    // posso vedere le statistiche di tutti i giocatori
+    public PlayerNode getStats(String playerId) {
+            return playerNodeDAO.getStats(playerId);
     }
 
     public List<Integer> getEloTrend(String playerId) {

@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -203,4 +204,9 @@ public class MatchDAO {
                         throw new RuntimeException("Errore nella conversione di Match in JSON", e);
                 }
         }
+
+    public void deleteMatchesBeforeDate(Date date) {
+        Document query = new Document("date", new Document("$lt", date));
+        matchCollection.deleteMany(query);
+    }
 }
