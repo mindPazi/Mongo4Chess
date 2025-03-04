@@ -2,6 +2,7 @@ package com.example.demo.dao;
 
 import com.example.demo.model.Match;
 import com.example.demo.model.Player;
+import com.example.demo.model.PlayerMatch;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -59,7 +60,7 @@ public class PlayerDAO {
         // get stats
     }
 
-    public List<Integer> getEloTrend(String username) {
+    public List<PlayerMatch> getEloTrend(String username) {
         // Recupera il player tramite il metodo esistente
         Player player = getPlayer(username);
 
@@ -67,21 +68,8 @@ public class PlayerDAO {
             throw new RuntimeException("Player non trovato con username: " + username);
         }
 
-        List<Match> matches = player.getMatches();
-        List<Integer> eloTrend = new ArrayList<>();
-
-        // Estrai l'elo iniziale da ogni match in base al ruolo
-        if (matches != null) {
-            for (Match match : matches) {
-                if (username.equals(match.getWhite())) {
-                    eloTrend.add(match.getWhiteElo());
-                } else if (username.equals(match.getBlack())) {
-                    eloTrend.add(match.getBlackElo());
-                }
-            }
-        }
-
-        return eloTrend;
+        // ritorna la lista di elo e data del match
+        return player.getMatches();
     }
 
     public Player getPlayer(String player) {
@@ -98,7 +86,17 @@ public class PlayerDAO {
         player.setUsername(doc.getString("username"));
         player.setPassword(doc.getString("password"));
         player.setIsBanned(doc.getBoolean("isBanned", false));
-        player.setMatches((List<Match>) doc.get("matches"));
+        List<Document> matchDocs = (List<Document>) doc.get("matches");
+        List<PlayerMatch> matches = new ArrayList<>();
+        if(matchDocs != null) {
+            for (Document matchDoc : matchDocs) {
+                PlayerMatch match = new PlayerMatch();
+                match.setElo(matchDoc.getInteger("Elo"));
+                match.setDate(matchDoc.getDate("date"));
+                matches.add(match);
+            }
+        }
+        player.setMatches(matches);
         return player;
     }
 

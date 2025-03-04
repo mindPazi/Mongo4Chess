@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
+import com.example.demo.model.PlayerMatch;
 import com.example.demo.model.PlayerNode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,6 +33,7 @@ import com.example.demo.service.MatchService;
 
 //todo: delete friend
 //todo: continuare a testare le get
+//todo: far in modo che al join del torneo venga aggiunto anche al player l'id del torneo
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/player")
@@ -238,14 +241,13 @@ public class PlayerController {
             @ApiResponse(responseCode = "500", description = "Errore interno del server")
     })
     @GetMapping("/tournament/active")
-    public ResponseEntity<List<Tournament>> getActiveTournaments() {
+    public ResponseEntity<?> getActiveTournaments() {
         try {
             List<Tournament> tournaments = tournamentService.getActiveTournaments();
             return ResponseEntity.ok(tournaments);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Errore durante il recupero dei tornei attivi: " + e.getMessage());
         }
     }
 
@@ -262,10 +264,15 @@ public class PlayerController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Andamento ELO ottenuto con successo")
     })
-    @GetMapping("/{playerId}/elo_trend")
-    public ResponseEntity<List<Integer>> getEloTrend(@PathVariable String playerId) {
-        List<Integer> eloTrend = playerService.getEloTrend(playerId);
-        return ResponseEntity.ok(eloTrend);
+    @GetMapping("/eloTrend/{playerId}")
+    public ResponseEntity<?> getEloTrend(@PathVariable String playerId) {
+        try {
+            List<PlayerMatch> eloTrend = playerService.getEloTrend(playerId);
+            return ResponseEntity.ok(eloTrend);
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Errore durante il recupero dell'andamento dell'ELO: " + e.getMessage());
+        }
     }
 
     @Operation(summary = "Aggiungi un amico alla lista amici del giocatore")

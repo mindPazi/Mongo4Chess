@@ -1,5 +1,6 @@
 package com.example.demo.dao;
 
+import com.example.demo.model.Player;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
@@ -80,4 +81,8 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
         @Query("USE chessDB " +
                         "MATCH (p:PlayerNode {username: $playerId}) RETURN p")
         PlayerNode getStats(String playerId);
+
+        @Query("USE chessDB " +
+                        "MATCH (p:PlayerNode {username: $playerId}) RETURN p")
+        PlayerNode getPlayer(String playerId);
 }

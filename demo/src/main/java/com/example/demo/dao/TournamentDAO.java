@@ -63,8 +63,9 @@ public class TournamentDAO {
         return tournaments;
     }
 
-    public List<Tournament> getActiveTournaments() {
-        List<Tournament> tournaments = mongoTemplate.find(new Query(), Tournament.class, "TournamentCollection");
+    public List<Tournament> getActiveTournaments(int elo) {
+        Query query = new Query(Criteria.where("isClosed").is(false).and("eloMin").lte(elo).and("eloMax").gte(elo));
+        List<Tournament> tournaments = mongoTemplate.find(query, Tournament.class, "TournamentCollection");
         System.out.println("Active tournaments retrieved successfully");
         return tournaments;
     }

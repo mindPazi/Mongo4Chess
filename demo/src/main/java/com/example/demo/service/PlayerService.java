@@ -4,6 +4,7 @@ import com.example.demo.dao.PlayerDAO;
 import com.example.demo.dao.PlayerNodeDAO;
 import com.example.demo.model.Match;
 import com.example.demo.model.Player;
+import com.example.demo.model.PlayerMatch;
 import com.example.demo.model.PlayerNode;
 import lombok.Setter;
 
@@ -99,7 +100,7 @@ public class PlayerService {
             return playerNodeDAO.getStats(playerId);
     }
 
-    public List<Integer> getEloTrend(String playerId) {
+    public List<PlayerMatch> getEloTrend(String playerId) {
         try {
             return playerDAO.getEloTrend(playerId);
         } catch (Exception e) {

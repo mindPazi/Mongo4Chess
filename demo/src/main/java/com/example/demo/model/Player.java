@@ -15,31 +15,19 @@ public class Player {
     private String username;
     private String password;
     // todo: nella collection player non c'è l'elo corrente, togliere
-    private int elo;
-    private List<Match> matches;
+    //private int elo;
+    private List<PlayerMatch> matches;
     private List<Tournament> tournaments;
     private Boolean isBanned;
 
     // constructor for new players
-    public Player(String username, String password, int elo) {
+    public Player(String username, String password){//, int elo) {
         this.username = username;
         this.password = password;
-        this.elo = elo;
-    }
-
-    public boolean isBanned() {
-        return isBanned;
-    }
-
-    public void setBanned(boolean banned) {
-        isBanned = banned;
+        //this.elo = elo;
     }
 
     public Player() {
-    }
-
-    public String getUsername() {
-        return this.username;
     }
 
 }

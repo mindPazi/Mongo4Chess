@@ -25,7 +25,6 @@ public class MatchService {
 
     //todo: gestire la consistenza
     public void saveMatch(Match match) throws Exception {
-        matchDAO.saveMatch(match);
 
         Optional<Integer> whiteEloOpt = playerNodeDAO.getElo(match.getWhite());
         Optional<Integer> blackEloOpt = playerNodeDAO.getElo(match.getBlack());
@@ -40,6 +39,9 @@ public class MatchService {
 
         match.setWhiteElo(whiteEloOpt.get());
         match.setBlackElo(blackEloOpt.get());
+
+        //il match viene salvato dopo aver calcolato l'elo prima del match
+        matchDAO.saveMatch(match);
 
         //calculate new Elo
         List<Integer> deltaElos = new java.util.ArrayList<>(PlayerService.calculateNewElo(match));

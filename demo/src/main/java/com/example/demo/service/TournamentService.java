@@ -1,7 +1,9 @@
 package com.example.demo.service;
 
+import com.example.demo.dao.PlayerNodeDAO;
 import com.example.demo.model.Match;
 import com.example.demo.model.Player;
+import com.example.demo.model.PlayerNode;
 import com.example.demo.model.Tournament;
 
 import java.util.HashMap;
@@ -28,11 +30,13 @@ public class TournamentService {
 
     private final TournamentDAO tournamentDAO;
     private final PlayerDAO playerDAO;
+    private final PlayerNodeDAO playerNodeDAO;
 
     @Autowired
-    public TournamentService(TournamentDAO tournamentDAO, PlayerDAO playerDAO) {
+    public TournamentService(TournamentDAO tournamentDAO, PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO) {
         this.tournamentDAO = tournamentDAO;
         this.playerDAO = playerDAO;
+        this.playerNodeDAO = playerNodeDAO;
     }
 
     public Tournament createTournament(Tournament tournament) throws RuntimeException {
@@ -68,15 +72,10 @@ public class TournamentService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
 
-        Player player = playerDAO.getPlayer(username);
+        PlayerNode player = playerNodeDAO.getPlayer(username);
         int playerElo = player.getElo();
 
-        List<Tournament> activeTournaments = tournamentDAO.getActiveTournaments();
-
-        return activeTournaments.stream()
-                .filter(tournament -> !Boolean.TRUE.equals(tournament.getIsClosed()))
-                .filter(tournament -> playerElo >= tournament.getEloMin() && playerElo <= tournament.getEloMax())
-                .collect(Collectors.toList());
+        return tournamentDAO.getActiveTournaments(playerElo);
     }
 
     public void addMostImportantMatches(List<Match> matches, String tournamentId) {
