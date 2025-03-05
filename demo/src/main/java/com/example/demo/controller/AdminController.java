@@ -2,14 +2,14 @@ package com.example.demo.controller;
 
 import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
-import com.example.demo.DemoApplication;
+import com.example.demo.DTO.TournamentMatchDTO;
+import com.example.demo.DTO.TournamentPlayerDTO;
+import com.example.demo.model.TournamentMatch;
+import com.example.demo.model.TournamentPlayer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Past;
 import lombok.RequiredArgsConstructor;
 
-import org.hibernate.validator.internal.constraintvalidators.bv.time.pastorpresent.PastOrPresentValidatorForDate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -31,10 +31,13 @@ import com.example.demo.service.AdminService;
 import com.example.demo.service.TournamentService;
 
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 //todo: aggiungere update positions(dei tornei)
+//todo: aggiungere i match ai tornei
+
 
 @RestController
 @RequiredArgsConstructor
@@ -46,6 +49,23 @@ public class AdminController {
     private final AdminService adminService;
     private final MatchService matchService;
     private final TournamentService tournamentService;
+
+    @Operation(summary = "Aggiungi le posizioni ai tornei", description = "Aggiunge le posizioni ai tornei")
+    @PatchMapping("/tournament/updatePositions/{tournamentId}")
+    public ResponseEntity<String> updatePositions(@PathVariable String tournamentId, @RequestBody @Valid List<TournamentPlayerDTO> tournamentPlayerDTOs) {
+        try {
+            List<TournamentPlayer> tournamentPlayers = new ArrayList<>();
+            for (TournamentPlayerDTO tournamentPlayerDTO : tournamentPlayerDTOs) {
+                TournamentPlayer tp = new TournamentPlayer();
+                BeanUtils.copyProperties(tournamentPlayerDTO, tp);
+                tournamentPlayers.add(tp);
+            }
+            tournamentService.updatePositions(tournamentPlayers, tournamentId);
+            return ResponseEntity.ok("Positions updated!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating positions: " + e.getMessage());
+        }
+    }
 
     @Operation(summary = "Delete a player", description = "Deletes a player by username")
     @DeleteMapping("/player/{username}")
@@ -224,11 +244,18 @@ public class AdminController {
         }
     }
 
+    //todo: aggiustare, probabilemtne il problema è che bisogna copiare il matchDTO in match con copyProperties
     @Operation(summary = "Add match to tournament", description = "Adds a match to a specific tournament")
     @PatchMapping("/tournament/{tournamentId}/addMatch")
-    public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody Match match) {
+    public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody List<TournamentMatchDTO> tournamentMatchDTOs) {
         try {
-            tournamentService.addMatch(tournamentId, match);
+            List<TournamentMatch> matches = new ArrayList<>();
+            for (TournamentMatchDTO matchDTO : tournamentMatchDTOs) {
+                TournamentMatch match = new TournamentMatch();
+                BeanUtils.copyProperties(matchDTO, match);
+                matches.add(match);
+            }
+            tournamentService.addMostImportantMatches(tournamentId, matches);
             return ResponseEntity.ok("Match added to tournament " + tournamentId);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error adding match: " + e.getMessage());

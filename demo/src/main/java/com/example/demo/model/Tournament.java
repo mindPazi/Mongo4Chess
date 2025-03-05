@@ -22,9 +22,9 @@ public class Tournament {
     private int eloMax;
     private String winner;
     // lista dei giocatori iscritti al torneo, con la posizione raggiunta
-    private List<Map<String, Integer>> players = new ArrayList<>();
+    private List<TournamentPlayer> players = new ArrayList<>();
     // lista delle partite più importanti del torneo
-    private List<Match> matches = new ArrayList<>();
+    private List<TournamentMatch> matches = new ArrayList<>();
 
     public Tournament(String name, int eloMin, int eloMax, int maxPlayers) {
         this.maxPlayers = maxPlayers;
@@ -38,14 +38,12 @@ public class Tournament {
     }
 
     // Metodo per aggiungere un giocatore
-    public void addPlayer(String playerUsername) {
-        Map<String, Integer> playerEntry = new HashMap<>();
-        playerEntry.put(playerUsername, 0); // 0 come posizione iniziale
-        this.players.add(playerEntry);
+    public void addPlayer(TournamentPlayer player) {
+        this.players.add(player);
     }
 
     // Metodo per rimuovere un giocatore
     public void removePlayer(String playerUsername) {
-        this.players.removeIf(playerMap -> playerMap.containsKey(playerUsername));
+        this.players.removeIf(player -> player.getUsername().equals(playerUsername));
     }
 }

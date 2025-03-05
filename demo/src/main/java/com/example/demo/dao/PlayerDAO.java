@@ -1,8 +1,6 @@
 package com.example.demo.dao;
 
-import com.example.demo.model.Match;
-import com.example.demo.model.Player;
-import com.example.demo.model.PlayerMatch;
+import com.example.demo.model.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -97,6 +95,23 @@ public class PlayerDAO {
             }
         }
         player.setMatches(matches);
+
+        List<Document> tournamentDocs = (List<Document>) doc.get("tournaments");
+        List<PlayerTournament> tournaments = new ArrayList<>();
+        if(tournamentDocs != null) {
+            for (Document tournamentDoc : tournamentDocs) {
+                tournaments.add(new PlayerTournament(
+                        tournamentDoc.getString("id"),
+                        tournamentDoc.getString("name"),
+                        tournamentDoc.getDate("startDate"),
+                        tournamentDoc.getDate("endDate"),
+                        tournamentDoc.getInteger("position")
+                ));
+            }
+        }
+        player.setTournaments(tournaments);
+
+
         return player;
     }
 
@@ -106,4 +121,35 @@ public class PlayerDAO {
                 .append("password", player.getPassword());
     }
 
+    public List<PlayerTournament> getMyTournaments(String playerId) {
+        Player player = getPlayer(playerId);
+        if (player == null) {
+            throw new RuntimeException("Player not found with username: " + playerId);
+        }
+        return player.getTournaments();
+    }
+
+    public void addTournament(String playerId, PlayerTournament playerTournament) {
+        Document tournamentDoc = new Document("name", playerTournament.getName())
+                .append("id", playerTournament.getId())
+                .append("startDate", playerTournament.getStartDate())
+                .append("endDate", playerTournament.getEndDate())
+                .append("position", playerTournament.getPosition());
+        playerCollection.updateOne(new Document("username", playerId),
+                new Document("$push", new Document("tournaments", tournamentDoc)));
+    }
+
+    public void removeTournament(String tournamentId, String playerId) {
+        playerCollection.updateOne(new Document("username", playerId),
+                new Document("$pull", new Document("tournaments", new Document("id", tournamentId))));
+
+    }
+
+    public void updateTournamentPositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
+        for (TournamentPlayer tournamentPlayer : tournamentPlayers) {
+            playerCollection.updateOne(new Document("username", tournamentPlayer.getUsername())
+                    .append("tournaments.id", tournamentId),
+                    new Document("$set", new Document("tournaments.$.position", tournamentPlayer.getPosition())));
+        }
+    }
 }

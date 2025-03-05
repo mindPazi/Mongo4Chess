@@ -1,12 +1,10 @@
 package com.example.demo.dao;
 
-import com.example.demo.model.Tournament;
+import com.example.demo.model.*;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.result.UpdateResult;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
-import com.example.demo.model.Player;
-import com.example.demo.model.Match;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -70,24 +68,24 @@ public class TournamentDAO {
         return tournaments;
     }
 
-    public void addMostImportantMatches(List<Match> matches, String tournamentId) {
-        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
-        if (tournament != null) {
-            tournament.setMatches(matches);
-            mongoTemplate.save(tournament);
-            System.out.println("Most important matches added successfully to tournament: " + tournamentId);
-        } else {
-            System.out.println("Tournament not found: " + tournamentId);
-        }
-    }
+//    public void addMostImportantMatches(List<Match> matches, String tournamentId) {
+//        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
+//        if (tournament != null) {
+//            tournament.setMatches(matches);
+//            mongoTemplate.save(tournament);
+//            System.out.println("Most important matches added successfully to tournament: " + tournamentId);
+//        } else {
+//            System.out.println("Tournament not found: " + tournamentId);
+//        }
+//    }
 
-    public void joinTournament(String tournamentId, String playerUsername) {
+    public void joinTournament(String tournamentId, TournamentPlayer player) {
         Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
         if (tournament != null) {
-            tournament.addPlayer(playerUsername);
+            tournament.addPlayer(player);
             mongoTemplate.save(tournament);
             System.out.println(
-                    "Player joined tournament successfully: " + playerUsername + " to tournament: " + tournamentId);
+                    "Player joined tournament successfully: " + player.getUsername() + " to tournament: " + tournamentId);
         } else {
             System.out.println("Tournament not found: " + tournamentId);
         }
@@ -126,17 +124,17 @@ public class TournamentDAO {
     }
 
     // Aggiunge un giocatore al torneo
-    public void addPlayer(String tournamentId, Map<String,Integer> player) {
+    public void addPlayer(String tournamentId, TournamentPlayer player) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
         Update update = new Update().push("players", player);
         mongoTemplate.updateFirst(query, update, Tournament.class);
-        System.out.println("Giocatore " + player.keySet().iterator().next() + " aggiunto al torneo: " + tournamentId);
+        System.out.println("Giocatore " + player.getUsername() + " aggiunto al torneo: " + tournamentId);
     }
 
     // Rimuove un giocatore dal torneo
     public void removePlayer(String tournamentId, String player) {
-        Query query = new Query(Criteria.where("id").is(tournamentId).and("players." + player).exists(true));
-        Update update = new Update().pull("players", Collections.singletonMap(player,0));
+        Query query = new Query(Criteria.where("id").is(tournamentId).and("players.username").is(player));
+        Update update = new Update().pull("players", new BasicDBObject("username", player));
         UpdateResult result = mongoTemplate.updateFirst(query, update, Tournament.class);
         if (result.getModifiedCount() > 0) {
             System.out.println("Giocatore " + player + " rimosso dal torneo: " + tournamentId);
@@ -157,7 +155,7 @@ public class TournamentDAO {
 
     public void closeTournament(String tournamentId) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
-        Update update = new Update().set("closed", true);
+        Update update = new Update().set("isClosed", true);
         mongoTemplate.updateFirst(query, update, Tournament.class);
         System.out.println("Tournament closed successfully: " + tournamentId);
     }
@@ -167,5 +165,19 @@ public class TournamentDAO {
         Update update = new Update().set("closed", false);
         mongoTemplate.updateFirst(query, update, Tournament.class);
         System.out.println("Tournament opened successfully: " + tournamentId);
+    }
+
+    public void updatePositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
+        Query query = new Query(Criteria.where("id").is(tournamentId));
+        Update update = new Update().set("players", tournamentPlayers);
+        mongoTemplate.updateFirst(query, update, Tournament.class);
+        System.out.println("Tournament positions updated successfully: " + tournamentId);
+    }
+
+    public void addMatchToTournament(String tournamentId, List<TournamentMatch> matches) {
+        Query query = new Query(Criteria.where("id").is(tournamentId));
+        Update update = new Update().set("matches", matches);
+        mongoTemplate.updateFirst(query, update, Tournament.class);
+        System.out.println("Matches added to tournament successfully: " + tournamentId);
     }
 }

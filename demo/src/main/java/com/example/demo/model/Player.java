@@ -17,7 +17,7 @@ public class Player {
     // todo: nella collection player non c'è l'elo corrente, togliere
     //private int elo;
     private List<PlayerMatch> matches;
-    private List<Tournament> tournaments;
+    private List<PlayerTournament> tournaments;
     private Boolean isBanned;
 
     // constructor for new players

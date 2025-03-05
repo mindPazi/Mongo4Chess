@@ -2,15 +2,14 @@ package com.example.demo.controller;
 
 import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
-import com.example.demo.model.PlayerMatch;
-import com.example.demo.model.PlayerNode;
+import com.example.demo.DTO.TournamentMatchDTO;
+import com.example.demo.model.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import com.example.demo.model.Match;
 import com.example.demo.service.PlayerService;
 import com.example.demo.service.TournamentService;
-import com.example.demo.model.Tournament;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,6 +31,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.demo.service.MatchService;
 
 //todo: delete friend
+//todo: controllare che il ban funzioni
 //todo: continuare a testare le get
 //todo: far in modo che al join del torneo venga aggiunto anche al player l'id del torneo
 @RequiredArgsConstructor
@@ -73,6 +73,22 @@ public class PlayerController {
             // Gestione degli errori
             System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @Operation(summary="Ottieni i tornei giocati dal giocatore")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Posizioni ottenute con successo"),
+            @ApiResponse(responseCode = "400", description = "Richiesta non valida")
+    })
+    @GetMapping("/tournament/myTournaments")
+    public ResponseEntity<?> getMyTournaments() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String playerId = authentication.getName();
+            return ResponseEntity.ok(playerService.getMyTournaments(playerId));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Errore durante il recupero delle posizioni: " + e.getMessage());
         }
     }
 
@@ -179,23 +195,20 @@ public class PlayerController {
         }
     }
 
-    @Operation(summary = "Aggiungi le partite più importanti a un torneo")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Partite aggiunte con successo"),
-            @ApiResponse(responseCode = "400", description = "Dati non validi")
-    })
-    @PatchMapping("/most_important_matches")
-    public ResponseEntity<?> addMostImportantMatches(@RequestBody List<Match> matches,
-                                                     @RequestBody String tournamentId) {
-        if (matches == null || matches.isEmpty() || tournamentId == null || tournamentId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Dati non validi per aggiungere le partite");
-        }
+    @Operation(summary = "Add match to tournament", description = "Adds a match to a specific tournament")
+    @PatchMapping("/tournament/{tournamentId}/addMatch")
+    public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody List<TournamentMatchDTO> matchDTOs) {
         try {
-            tournamentService.addMostImportantMatches(matches, tournamentId);
-            return ResponseEntity.ok("Partite aggiunte con successo");
+            List<TournamentMatch> matches = new ArrayList<>();
+            for (TournamentMatchDTO matchDTO : matchDTOs) {
+                TournamentMatch match = new TournamentMatch();
+                BeanUtils.copyProperties(matchDTO, match);
+                matches.add(match);
+            }
+            tournamentService.addMostImportantMatches(tournamentId, matches);
+            return ResponseEntity.ok("Match added to tournament " + tournamentId);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante l'aggiunta delle partite");
+            return ResponseEntity.badRequest().body("Error adding match: " + e.getMessage());
         }
     }
 

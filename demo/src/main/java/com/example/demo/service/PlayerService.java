@@ -2,10 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dao.PlayerDAO;
 import com.example.demo.dao.PlayerNodeDAO;
-import com.example.demo.model.Match;
-import com.example.demo.model.Player;
-import com.example.demo.model.PlayerMatch;
-import com.example.demo.model.PlayerNode;
+import com.example.demo.model.*;
 import lombok.Setter;
 
 import java.util.List;
@@ -173,4 +170,7 @@ public class PlayerService {
         return 1 / (1 + Math.pow(10, (double) (opponentElo - myElo) / 400));
     }
 
+    public List<PlayerTournament> getMyTournaments(String playerId) {
+        return playerDAO.getMyTournaments(playerId);
+    }
 }
