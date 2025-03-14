@@ -37,9 +37,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         Player player = playerDAO.getPlayer(username);
         //PlayerNode playerNode = playerNodeDAO.getPlayerNode(username);
         if (player != null) {
-            playerService.setPlayer(player);
+            if(player.getIsBanned())
+                throw new UsernameNotFoundException("You are banned");
+            //playerService.setPlayer(player);
             //playerService.setPlayerNode(playerNode);
-
             return User.builder()
                     .username(player.getUsername())
                     .password(player.getPassword())

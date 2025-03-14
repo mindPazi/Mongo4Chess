@@ -92,9 +92,30 @@ public class TournamentService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String playerUsername = authentication.getName();
 
-            TournamentPlayer playerEntry = new TournamentPlayer(playerUsername, 0);
+            PlayerNode playerNode = playerNodeDAO.getPlayerById(playerUsername);
+            Tournament tournament = tournamentDAO.getTournament(tournamentId);
 
+            if (playerNode.getElo() < tournament.getEloMin() || playerNode.getElo() > tournament.getEloMax()) {
+                throw new RuntimeException("Elo non valido");
+            }
+
+            if (tournament.getIsClosed()) {
+                throw new RuntimeException("Torneo chiuso");
+            }
+            if (tournament.getPlayers().stream().anyMatch(p -> p.getUsername().equals(playerUsername))) {
+                throw new RuntimeException("Giocatore già iscritto");
+            }
+            if (tournament.getPlayers().size() >= tournament.getMaxPlayers()) {
+                throw new RuntimeException("Torneo pieno");
+            }
+
+            TournamentPlayer playerEntry = new TournamentPlayer(playerUsername, 0);
             tournamentDAO.addPlayer(tournamentId, playerEntry);
+            playerDAO.addTournament(playerUsername, new PlayerTournament(tournamentId, tournament.getName(), tournament.getStartDate(), tournament.getEndDate(), 0));
+
+            if (tournament.getPlayers().size() + 1 == tournament.getMaxPlayers()) {
+                tournamentDAO.closeTournament(tournamentId);
+            }
         } catch (Exception e) {
             logger.error("Errore durante l'iscrizione al torneo {} da parte del giocatore {}", tournamentId,
                     e.getMessage(), e);
@@ -191,10 +212,18 @@ public class TournamentService {
         }
     }
 
+    // le partite fatte nei tornei non incidono sullo storico elo dei giocatori, nè vengono automaticamente inserite nella collection di matches
     public void addMostImportantMatches(String tournamentId, List<TournamentMatch> matches) {
         try {
+            //aggiorna l'elo del bianco e del nero prima della partita e poi aggiunge la partita
+            for (TournamentMatch tm : matches) {
+                PlayerNode white = playerNodeDAO.getPlayer(tm.getMatch().getWhite());
+                PlayerNode black = playerNodeDAO.getPlayer(tm.getMatch().getBlack());
+                tm.getMatch().setWhiteElo(white.getElo());
+                tm.getMatch().setBlackElo(black.getElo());
+            }
             tournamentDAO.addMatchToTournament(tournamentId, matches);
-            matchDAO.addMatches(matches.stream().map(TournamentMatch::getMatch).collect(Collectors.toList()));
+            //matchDAO.addMatches(matches.stream().map(TournamentMatch::getMatch).collect(Collectors.toList()));
             logger.info("Partite aggiunte con successo al torneo {}", tournamentId);
         } catch (Exception e) {
             logger.error("Errore durante l'aggiunta delle partite al torneo {}", tournamentId, e);

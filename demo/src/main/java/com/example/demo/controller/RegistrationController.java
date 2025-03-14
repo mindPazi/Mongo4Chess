@@ -30,7 +30,7 @@ public class RegistrationController {
     public ResponseEntity<String> registerPlayer(@RequestBody @Valid PlayerDTO playerDTO) {
         String encodedPassword = passwordEncoder.encode(playerDTO.getPassword());
         // a new player is created with elo 0
-        playerService.setPlayer(new Player(playerDTO.getUsername(), encodedPassword));
+        //playerService.setPlayer(new Player(playerDTO.getUsername(), encodedPassword));
         //playerService.setPlayer(new Player(username, password, 0));
         return ResponseEntity.ok(playerService.createPlayer(playerDTO.getUsername(), encodedPassword, 0));
     }

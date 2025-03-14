@@ -20,10 +20,10 @@ public class PlayerService {
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
     private final PlayerDAO playerDAO;
     private final PlayerNodeDAO playerNodeDAO;
-    @Setter
-    private Player player;
-    @Setter
-    private PlayerNode playerNode;
+//    @Setter
+//    private Player player;
+//    @Setter
+//    private PlayerNode playerNode;
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final static int EloConstant = 30;
 

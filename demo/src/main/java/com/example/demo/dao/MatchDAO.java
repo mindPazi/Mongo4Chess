@@ -210,17 +210,17 @@ public class MatchDAO {
         matchCollection.deleteMany(query);
     }
 
-    public void addMatches(List<Match> matches) {
-        List<Document> matchDocuments = matches.stream()
-                .map(Match::toJson)
-                .map(Document::parse)
-                .collect(Collectors.toList());
-        matchCollection.insertMany(matchDocuments);
-        for (Match match : matches) {
-            playerCollection.updateOne(new Document("username", match.getWhite()),
-                    new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getWhite()))));
-            playerCollection.updateOne(new Document("username", match.getBlack()),
-                    new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getBlack()))));
-        }
-    }
+//    public void addMatches(List<Match> matches) {
+//        List<Document> matchDocuments = matches.stream()
+//                .map(Match::toJson)
+//                .map(Document::parse)
+//                .collect(Collectors.toList());
+//        matchCollection.insertMany(matchDocuments);
+//        for (Match match : matches) {
+//            playerCollection.updateOne(new Document("username", match.getWhite()),
+//                    new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getWhite()))));
+//            playerCollection.updateOne(new Document("username", match.getBlack()),
+//                    new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getBlack()))));
+//        }
+//    }
 }

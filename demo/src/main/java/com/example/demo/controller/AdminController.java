@@ -35,9 +35,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-//todo: aggiungere update positions(dei tornei)
-//todo: aggiungere i match ai tornei
-
+//todo: estrarre i metodi in comune tra player e admin
+//todo: aggiungere see most important match of tournament
 
 @RestController
 @RequiredArgsConstructor
@@ -252,7 +251,10 @@ public class AdminController {
             List<TournamentMatch> matches = new ArrayList<>();
             for (TournamentMatchDTO matchDTO : tournamentMatchDTOs) {
                 TournamentMatch match = new TournamentMatch();
-                BeanUtils.copyProperties(matchDTO, match);
+                Match matchEntity = new Match();
+                BeanUtils.copyProperties(matchDTO.getMatch(), matchEntity);
+                match.setMatch(matchEntity);
+                match.setMatchGrade(matchDTO.getMatchGrade());
                 matches.add(match);
             }
             tournamentService.addMostImportantMatches(tournamentId, matches);

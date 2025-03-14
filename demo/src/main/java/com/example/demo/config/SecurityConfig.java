@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .anyRequest().permitAll()) // All other requests are public
                 .httpBasic(withDefaults());
 
+
         return http.build();
     }
 }

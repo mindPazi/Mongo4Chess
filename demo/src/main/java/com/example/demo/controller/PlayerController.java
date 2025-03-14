@@ -31,9 +31,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.demo.service.MatchService;
 
 //todo: delete friend
-//todo: controllare che il ban funzioni
 //todo: continuare a testare le get
 //todo: far in modo che al join del torneo venga aggiunto anche al player l'id del torneo
+//todo: aggiungere see most important match of tournament
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/player")
@@ -218,9 +218,8 @@ public class PlayerController {
             @ApiResponse(responseCode = "400", description = "Dati non validi"),
             @ApiResponse(responseCode = "500", description = "Errore interno del server")
     })
-    @PatchMapping("/tournament/join")
-    public ResponseEntity<String> joinTournament(
-            @RequestParam @Parameter(description = "ID del torneo a cui unirsi", required = true) String tournamentId) {
+    @PatchMapping("/tournament/join/{tournamentId}")
+    public ResponseEntity<String> joinTournament(@PathVariable String tournamentId) {
 
         if (tournamentId == null || tournamentId.trim().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Dati non validi per unirsi al torneo");
