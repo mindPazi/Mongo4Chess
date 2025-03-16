@@ -3,7 +3,9 @@ package com.example.demo.controller;
 import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
 import com.example.demo.DTO.TournamentMatchDTO;
+import com.example.demo.DTO.TournamentPlayerDTO;
 import com.example.demo.model.*;
+import com.example.demo.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.example.demo.service.PlayerService;
@@ -32,22 +34,25 @@ import com.example.demo.service.MatchService;
 
 //todo: delete friend
 //todo: continuare a testare le get
-//todo: far in modo che al join del torneo venga aggiunto anche al player l'id del torneo
-//todo: aggiungere see most important match of tournament
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
+//todo: spostare i metodi in comune in CommonPlayerAdminController
 @RestController
 @RequestMapping("/api/player")
 @Tag(name = "Player Controller", description = "Player operations")
-public class PlayerController {
+public class PlayerController extends CommonPlayerAdminController {
 
-    @Autowired
-    private MatchService matchService;
+//    @Autowired
+//    private MatchService matchService;
+//
+//    @Autowired
+//    private PlayerService playerService;
+//
+//    @Autowired
+//    private TournamentService tournamentService;
 
-    @Autowired
-    private PlayerService playerService;
-
-    @Autowired
-    private TournamentService tournamentService;
+    PlayerController(MatchService matchService, PlayerService playerService, AdminService adminService, TournamentService tournamentService) {
+        super(playerService, matchService, adminService, tournamentService);
+    }
 
     @Operation(summary = "Crea un nuovo match")
     @ApiResponses({
@@ -56,27 +61,16 @@ public class PlayerController {
     })
     @PostMapping("/match")
     public ResponseEntity<?> saveMatch(@RequestBody @Valid MatchDTO matchDTO) {
-        try {
-            Match match = new Match();
-            BeanUtils.copyProperties(matchDTO, match);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String currentUsername = authentication.getName();
-
-            if (!match.getWhite().equals(currentUsername) && !match.getBlack().equals(currentUsername)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Devi essere uno dei giocatori per salvare un match");
-            }
-
-            matchService.saveMatch(match);
-            return ResponseEntity.status(HttpStatus.CREATED).body(match); // Restituisci l'oggetto Match creato
-        } catch (Exception e) {
-            // Gestione degli errori
-            System.out.println(e.getMessage());
-            return ResponseEntity.internalServerError().body(e.getMessage());
+        if (!matchDTO.getWhite().equals(currentUsername) && !matchDTO.getBlack().equals(currentUsername)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Devi essere uno dei giocatori per salvare un match");
         }
+        return super.saveMatch(matchDTO);
     }
 
-    @Operation(summary="Ottieni i tornei giocati dal giocatore")
+    @Operation(summary = "Ottieni i tornei giocati dal giocatore")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Posizioni ottenute con successo"),
             @ApiResponse(responseCode = "400", description = "Richiesta non valida")
@@ -99,29 +93,10 @@ public class PlayerController {
     })
     @PostMapping("/tournament/create")
     public ResponseEntity<?> createTournament(@RequestBody @Valid TournamentDTO tournamentDTO) {
-
-        try {
-            // Ottieni l'utente autenticato
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String currentUsername = authentication.getName();
-
-            // Copia i campi del DTO in un oggetto Tournament
-            Tournament tournament = new Tournament();
-            BeanUtils.copyProperties(tournamentDTO, tournament);
-            tournament.setCreator(currentUsername);
-            tournament.setIsClosed(false);
-
-            Tournament createdTournament = tournamentService.createTournament(tournament);
-
-            // Crea il torneo
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdTournament);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante la creazione del torneo: " + e.getMessage());
-        }
+        return super.createTournament(tournamentDTO);
     }
 
+    //un admin può eliminare qualsiasi torneo
     @Operation(summary = "Elimina un torneo")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Torneo eliminato con successo"),
@@ -136,6 +111,7 @@ public class PlayerController {
             tournamentService.deleteTournament(tournamentId);
             return ResponseEntity.ok("Torneo eliminato con successo");
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
@@ -233,8 +209,14 @@ public class PlayerController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             // Per errori di sistema o sconosciuti
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante l'aggiunta al torneo");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante l'aggiunta al torneo: " + e.getMessage());
         }
+    }
+
+    @Operation(summary = "Aggiungi le posizioni ai tornei", description = "Aggiunge le posizioni ai tornei")
+    @PatchMapping("/tournament/updatePositions/{tournamentId}")
+    public ResponseEntity<String> updatePositions(@PathVariable String tournamentId, @RequestBody @Valid List<TournamentPlayerDTO> tournamentPlayerDTOs) {
+        return super.updatePositions(tournamentId, tournamentPlayerDTOs);
     }
 
     @Operation(summary = "Ottieni tutti i tornei")
@@ -242,8 +224,8 @@ public class PlayerController {
             @ApiResponse(responseCode = "200", description = "Elenco tornei ottenuto con successo")
     })
     @GetMapping("/tournament/all")
-    public ResponseEntity<List<Tournament>> getAllTournaments() {
-        return ResponseEntity.ok(tournamentService.getAllTournaments());
+    public ResponseEntity<?> getAllTournaments() {
+        return super.getAllTournaments();
     }
 
     @Operation(summary = "Ottieni i tornei attivi filtrati per Elo del giocatore")
@@ -281,7 +263,7 @@ public class PlayerController {
         try {
             List<PlayerMatch> eloTrend = playerService.getEloTrend(playerId);
             return ResponseEntity.ok(eloTrend);
-        }catch(Exception e){
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Errore durante il recupero dell'andamento dell'ELO: " + e.getMessage());
         }

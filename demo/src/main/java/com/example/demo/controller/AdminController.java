@@ -5,17 +5,13 @@ import com.example.demo.DTO.TournamentDTO;
 import com.example.demo.DTO.TournamentMatchDTO;
 import com.example.demo.DTO.TournamentPlayerDTO;
 import com.example.demo.model.TournamentMatch;
-import com.example.demo.model.TournamentPlayer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Past;
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.service.PlayerService;
 import com.example.demo.service.MatchService;
@@ -39,31 +35,23 @@ import java.util.List;
 //todo: aggiungere see most important match of tournament
 
 @RestController
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @RequestMapping("/api/admin")
 @Tag(name = "Admin Controller", description = "Admin operations")
-public class AdminController {
+public class AdminController extends CommonPlayerAdminController {
+    public AdminController(PlayerService playerService, MatchService matchService, AdminService adminService, TournamentService tournamentService) {
+        super(playerService, matchService, adminService, tournamentService);
+    }
 
-    private final PlayerService playerService;
-    private final AdminService adminService;
-    private final MatchService matchService;
-    private final TournamentService tournamentService;
+//    private final PlayerService playerService;
+//    private final AdminService adminService;
+//    private final MatchService matchService;
+//    private final TournamentService tournamentService;
 
     @Operation(summary = "Aggiungi le posizioni ai tornei", description = "Aggiunge le posizioni ai tornei")
     @PatchMapping("/tournament/updatePositions/{tournamentId}")
     public ResponseEntity<String> updatePositions(@PathVariable String tournamentId, @RequestBody @Valid List<TournamentPlayerDTO> tournamentPlayerDTOs) {
-        try {
-            List<TournamentPlayer> tournamentPlayers = new ArrayList<>();
-            for (TournamentPlayerDTO tournamentPlayerDTO : tournamentPlayerDTOs) {
-                TournamentPlayer tp = new TournamentPlayer();
-                BeanUtils.copyProperties(tournamentPlayerDTO, tp);
-                tournamentPlayers.add(tp);
-            }
-            tournamentService.updatePositions(tournamentPlayers, tournamentId);
-            return ResponseEntity.ok("Positions updated!");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error updating positions: " + e.getMessage());
-        }
+        return super.updatePositions(tournamentId, tournamentPlayerDTOs);
     }
 
     @Operation(summary = "Delete a player", description = "Deletes a player by username")
@@ -143,16 +131,7 @@ public class AdminController {
     @Operation(summary = "Save a match", description = "Saves a new match to the database")
     @PostMapping("/match")
     public ResponseEntity<?> saveMatch(@RequestBody @Valid MatchDTO matchDTO) {
-        try {
-            Match match = new Match();
-            BeanUtils.copyProperties(matchDTO, match);
-            matchService.saveMatch(match);
-            return ResponseEntity.status(HttpStatus.CREATED).body(match); // Restituisci l'oggetto Match creato (o un DTO di risposta)
-        } catch (Exception e) {
-            // Gestione degli errori
-            System.out.println(e.getMessage());
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
+        return super.saveMatch(matchDTO);
     }
 
     @Operation(summary = "Delete all matches", description = "Deletes all matches from the database")
@@ -163,7 +142,7 @@ public class AdminController {
     }
 
     // i match vengono eliminati solo dalla collection dei match, rimangono nei player per tenere la statistica dell'andamento dell'elo
-    @Operation(summary="Delete matches before a date", description="Deletes all matches played before a specific date")
+    @Operation(summary = "Delete matches before a date", description = "Deletes all matches played before a specific date")
     @DeleteMapping("/matches/before/{date}")
     public ResponseEntity<String> deleteMatchesBeforeDate(@PathVariable @Valid @Past @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date date) {
         matchService.deleteMatchesBeforeDate(date);
@@ -184,47 +163,28 @@ public class AdminController {
     })
     @PostMapping("/tournament/create")
     public ResponseEntity<?> createTournament(@RequestBody @Valid TournamentDTO tournamentDTO) {
-        try {
-            // Ottieni l'utente autenticato
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String currentUsername = authentication.getName();
-
-            Tournament tournament = new Tournament();
-            BeanUtils.copyProperties(tournamentDTO, tournament);
-            tournament.setCreator(currentUsername);
-            tournament.setIsClosed(false);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(tournamentService.createTournament(tournament));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante la creazione del torneo:" + e.getMessage());
-        }
-    }
-
-    @Operation(summary = "Add winner to tournament", description = "Adds a winner to the specified tournament")
-    @PatchMapping("/tournament/winner/{id}/{winner}")
-    public ResponseEntity<String> addWinner(@PathVariable String id, @PathVariable String winner) {
-        try {
-            tournamentService.addWinner(id, winner);
-            return ResponseEntity.ok("Winner " + winner + " added to tournament " + id);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error adding winner: " + e.getMessage());
-        }
+        return super.createTournament(tournamentDTO);
     }
 
     @Operation(summary = "Get all tournaments", description = "Fetches all tournaments from the database")
     @GetMapping("/tournaments")
-    public ResponseEntity<List<Tournament>> getTournaments() {
-        return ResponseEntity.ok(tournamentService.getAllTournaments());
+    public ResponseEntity<?> getAllTournaments() {
+        return super.getAllTournaments();
     }
+
+    @Operation(summary = "Get tournaments by date", description = "Get tournaments by date")
+    @GetMapping("/tournaments/date/{startDate}/{endDate}")
+    public ResponseEntity<List<Tournament>> getTournamentsByDate(@PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, @PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        return ResponseEntity.ok(tournamentService.getTournamentsByDate(startDate, endDate));
+    }
+
 
     @Operation(summary = "Add player to tournament", description = "Adds a player to a specific tournament")
     @PatchMapping("/tournament/addPlayer/{tournamentId}/{playerId}")
     public ResponseEntity<String> addPlayerToTournament(@PathVariable String tournamentId,
                                                         @PathVariable String playerId) {
         try {
-            tournamentService.addPlayer(tournamentId, playerId);
+            tournamentService.addPlayerByAdmin(tournamentId, playerId);
             return ResponseEntity.ok("Player " + playerId + " added to tournament " + tournamentId);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error adding player: " + e.getMessage());

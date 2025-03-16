@@ -4,9 +4,9 @@ import com.example.demo.dao.MatchDAO;
 import com.example.demo.dao.PlayerNodeDAO;
 import com.example.demo.model.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 @Service
 
-//todo: aggiungere delete tournament
 public class TournamentService {
 
     private static final Logger logger = LoggerFactory.getLogger(TournamentService.class);
@@ -44,18 +43,17 @@ public class TournamentService {
 
     public void deleteTournament(String tournamentId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!Objects.equals(authentication.getName(), tournamentDAO.getTournament(tournamentId).getCreator())) {
-            throw new RuntimeException("Non sei il creatore del torneo");
+
+        // se non sei il creatore e non sei un admin non puoi eliminare un torneo
+        if (!Objects.equals(authentication.getName(), tournamentDAO.getTournament(tournamentId).getCreator()) && authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            throw new RuntimeException("Non sei il creatore del torneo o non hai i privilegi amministratore.");
         }
         tournamentDAO.deleteTournament(tournamentId);
+        for(TournamentPlayer player : tournamentDAO.getTournament(tournamentId).getPlayers()){
+            playerDAO.removeTournament(tournamentId, player.getUsername());
+        }
     }
 
-    public void addWinner(String tournamentId, String winnerUsername) throws RuntimeException {
-        if (playerDAO.getPlayer(winnerUsername) == null) {
-            throw new RuntimeException("Player not found");
-        }
-        tournamentDAO.addWinner(tournamentId, winnerUsername);
-    }
 
     public List<Tournament> getAllTournaments() {
         try {
@@ -77,72 +75,32 @@ public class TournamentService {
         return tournamentDAO.getActiveTournaments(playerElo);
     }
 
-//    public void addMostImportantMatches(List<Match> matches, String tournamentId) {
-//        try {
-//            tournamentDAO.addMostImportantMatches(matches, tournamentId);
-//        } catch (Exception e) {
-//            logger.error("Errore durante l'aggiunta delle partite più importanti al torneo {}", tournamentId, e);
-//            throw new RuntimeException("Errore nell'aggiungere le partite più importanti al torneo " + tournamentId);
-//        }
-//    }
 
     public void joinTournament(String tournamentId) {
-        try {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String playerUsername = authentication.getName();
 
-            PlayerNode playerNode = playerNodeDAO.getPlayerById(playerUsername);
-            Tournament tournament = tournamentDAO.getTournament(tournamentId);
-
-            if (playerNode.getElo() < tournament.getEloMin() || playerNode.getElo() > tournament.getEloMax()) {
-                throw new RuntimeException("Elo non valido");
-            }
-
-            if (tournament.getIsClosed()) {
-                throw new RuntimeException("Torneo chiuso");
-            }
-            if (tournament.getPlayers().stream().anyMatch(p -> p.getUsername().equals(playerUsername))) {
-                throw new RuntimeException("Giocatore già iscritto");
-            }
-            if (tournament.getPlayers().size() >= tournament.getMaxPlayers()) {
-                throw new RuntimeException("Torneo pieno");
-            }
-
-            TournamentPlayer playerEntry = new TournamentPlayer(playerUsername, 0);
-            tournamentDAO.addPlayer(tournamentId, playerEntry);
-            playerDAO.addTournament(playerUsername, new PlayerTournament(tournamentId, tournament.getName(), tournament.getStartDate(), tournament.getEndDate(), 0));
-
-            if (tournament.getPlayers().size() + 1 == tournament.getMaxPlayers()) {
-                tournamentDAO.closeTournament(tournamentId);
-            }
-        } catch (Exception e) {
-            logger.error("Errore durante l'iscrizione al torneo {} da parte del giocatore {}", tournamentId,
-                    e.getMessage(), e);
-            throw new RuntimeException("Errore nell'iscriversi al torneo " + tournamentId);
-        }
+            addPlayerToTournament(tournamentId, playerUsername);
     }
 
     public List<Tournament> getCreatedTournaments(String creator) {
         return tournamentDAO.getCreatedTournaments(creator);
     }
 
-//    public void addMatch(String tournamentId, Match match) {
-//        try {
-//            tournamentDAO.addMatch(tournamentId, match);
-//            logger.info("Match aggiunto con successo al torneo {}", tournamentId);
-//        } catch (Exception e) {
-//            logger.error("Errore durante l'aggiunta del match al torneo {}", tournamentId, e);
-//            throw new RuntimeException("Errore nell'aggiungere il match al torneo " + tournamentId);
-//        }
-//    }
 
     // used by admin
-    public void addPlayer(String tournamentId, String playerId) throws RuntimeException {
+    public void addPlayerByAdmin(String tournamentId, String playerId) throws RuntimeException {
         if (playerDAO.getPlayer(playerId) == null) {
             throw new RuntimeException("Player not found");
         }
 
+        addPlayerToTournament(tournamentId, playerId);
+
+        logger.info("Giocatore {} aggiunto con successo al torneo {}", playerId, tournamentId);
+    }
+
+    private void addPlayerToTournament(String tournamentId, String playerId) {
         PlayerNode playerNode = playerNodeDAO.getPlayerById(playerId);
         Tournament tournament = tournamentDAO.getTournament(tournamentId);
 
@@ -167,8 +125,6 @@ public class TournamentService {
         if (tournament.getPlayers().size() + 1 == tournament.getMaxPlayers()) {
             tournamentDAO.closeTournament(tournamentId);
         }
-
-        logger.info("Giocatore {} aggiunto con successo al torneo {}", playerId, tournamentId);
     }
 
     public void removePlayer(String tournamentId, String playerId) {
@@ -192,7 +148,6 @@ public class TournamentService {
     }
 
     public void updatePositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
-        try {
             Tournament tournament = tournamentDAO.getTournament(tournamentId);
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String creator = tournament.getCreator();
@@ -206,10 +161,6 @@ public class TournamentService {
             tournamentDAO.updatePositions(tournamentPlayers, tournamentId);
             playerDAO.updateTournamentPositions(tournamentPlayers, tournamentId);
             logger.info("Posizioni aggiornate con successo per il torneo {}", tournamentId);
-        } catch (Exception e) {
-            logger.error("Errore durante l'aggiornamento delle posizioni per il torneo {}", tournamentId, e);
-            throw new RuntimeException("Errore nell'aggiornare le posizioni per il torneo " + tournamentId);
-        }
     }
 
     // le partite fatte nei tornei non incidono sullo storico elo dei giocatori, nè vengono automaticamente inserite nella collection di matches
@@ -228,6 +179,15 @@ public class TournamentService {
         } catch (Exception e) {
             logger.error("Errore durante l'aggiunta delle partite al torneo {}", tournamentId, e);
             throw new RuntimeException("Errore nell'aggiungere le partite al torneo " + tournamentId);
+        }
+    }
+
+    public List<Tournament> getTournamentsByDate(Date startDate, Date endDate) {
+        try {
+            return tournamentDAO.getTournamentsByDate(startDate, endDate);
+        } catch (Exception e) {
+            logger.error("Errore durante il recupero dei tornei tra le date {} e {}", startDate, endDate, e);
+            throw new RuntimeException("Errore nel recupero dei tornei tra le date " + startDate + " e " + endDate);
         }
     }
 }

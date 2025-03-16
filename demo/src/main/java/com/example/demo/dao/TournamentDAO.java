@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +35,8 @@ public class TournamentDAO {
     }
 
     public void deleteTournament(String tournamentId) {
-        mongoTemplate.remove(mongoTemplate.findById(tournamentId, Tournament.class));
+        Query query = new Query(Criteria.where("id").is(tournamentId));
+        mongoTemplate.remove(query, Tournament.class, "TournamentCollection");
         System.out.println("Tournament deleted successfully: " + tournamentId);
     }
 
@@ -43,17 +45,6 @@ public class TournamentDAO {
         System.out.println("Tournament updated successfully: " + tournament);
     }
 
-    public void addWinner(String tournamentId, String winner) {
-        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
-        if (tournament != null) {
-            Query query = new Query(Criteria.where("id").is(tournamentId));
-            Update update = new Update().set("winner", winner);
-            mongoTemplate.updateFirst(query, update, Tournament.class);
-            System.out.println("Winner added successfully: " + winner + " to tournament: " + tournamentId);
-        } else {
-            throw new RuntimeException("Torneo non esistente: " + tournamentId);
-        }
-    }
 
     public List<Tournament> getAllTournaments() {
         List<Tournament> tournaments = mongoTemplate.findAll(Tournament.class, "TournamentCollection");
@@ -170,6 +161,11 @@ public class TournamentDAO {
     public void updatePositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
         Update update = new Update().set("players", tournamentPlayers);
+        // Trova il player con posizione 1 e aggiorna il campo winner
+        tournamentPlayers.stream()
+                .filter(player -> player.getPosition() == 1)
+                .findFirst()
+                .ifPresent(player -> update.set("winner", player.getUsername()));
         mongoTemplate.updateFirst(query, update, Tournament.class);
         System.out.println("Tournament positions updated successfully: " + tournamentId);
     }
@@ -179,5 +175,10 @@ public class TournamentDAO {
         Update update = new Update().set("matches", matches);
         mongoTemplate.updateFirst(query, update, Tournament.class);
         System.out.println("Matches added to tournament successfully: " + tournamentId);
+    }
+
+    public List<Tournament> getTournamentsByDate(Date startDate, Date endDate) {
+        Query query = new Query(Criteria.where("startDate").gte(startDate).lte(endDate));
+        return mongoTemplate.find(query, Tournament.class, "TournamentCollection");
     }
 }
