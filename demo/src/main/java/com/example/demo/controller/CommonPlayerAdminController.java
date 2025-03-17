@@ -2,9 +2,11 @@ package com.example.demo.controller;
 
 import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
+import com.example.demo.DTO.TournamentMatchDTO;
 import com.example.demo.DTO.TournamentPlayerDTO;
 import com.example.demo.model.Match;
 import com.example.demo.model.Tournament;
+import com.example.demo.model.TournamentMatch;
 import com.example.demo.model.TournamentPlayer;
 import com.example.demo.service.AdminService;
 import com.example.demo.service.MatchService;
@@ -88,6 +90,47 @@ public abstract class CommonPlayerAdminController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Errore durante il recupero dei tornei: " + e.getMessage());
+        }
+    }
+
+    public ResponseEntity<?> deleteTournament(@PathVariable String tournamentId) {
+        if (tournamentId == null || tournamentId.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID torneo non valido");
+        }
+        try {
+            tournamentService.deleteTournament(tournamentId);
+            return ResponseEntity.ok("Torneo eliminato con successo");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody List<TournamentMatchDTO> tournamentMatchDTOs) {
+        try {
+            List<TournamentMatch> matches = new ArrayList<>();
+            for (TournamentMatchDTO matchDTO : tournamentMatchDTOs) {
+                TournamentMatch match = new TournamentMatch();
+                Match matchEntity = new Match();
+                BeanUtils.copyProperties(matchDTO.getMatch(), matchEntity);
+                match.setMatch(matchEntity);
+                match.setMatchGrade(matchDTO.getMatchGrade());
+                matches.add(match);
+            }
+            tournamentService.addMostImportantMatches(tournamentId, matches);
+            return ResponseEntity.ok("Match added to tournament " + tournamentId);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error adding match: " + e.getMessage());
+        }
+    }
+
+    public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
+                                                             @PathVariable String playerId) {
+        try {
+            tournamentService.removePlayer(tournamentId, playerId);
+            return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error removing player: " + e.getMessage());
         }
     }
 

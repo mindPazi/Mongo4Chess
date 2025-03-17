@@ -1,9 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.DTO.MatchDTO;
-import com.example.demo.DTO.TournamentDTO;
-import com.example.demo.DTO.TournamentMatchDTO;
-import com.example.demo.DTO.TournamentPlayerDTO;
+import com.example.demo.DTO.*;
 import com.example.demo.model.TournamentMatch;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Past;
@@ -31,22 +28,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-//todo: estrarre i metodi in comune tra player e admin
-//todo: aggiungere see most important match of tournament
 
 @RestController
-//@RequiredArgsConstructor
 @RequestMapping("/api/admin")
 @Tag(name = "Admin Controller", description = "Admin operations")
 public class AdminController extends CommonPlayerAdminController {
     public AdminController(PlayerService playerService, MatchService matchService, AdminService adminService, TournamentService tournamentService) {
         super(playerService, matchService, adminService, tournamentService);
     }
-
-//    private final PlayerService playerService;
-//    private final AdminService adminService;
-//    private final MatchService matchService;
-//    private final TournamentService tournamentService;
 
     @Operation(summary = "Aggiungi le posizioni ai tornei", description = "Aggiunge le posizioni ai tornei")
     @PatchMapping("/tournament/updatePositions/{tournamentId}")
@@ -92,7 +81,7 @@ public class AdminController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "200", description = "Username aggiornato con successo"),
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
-    @PutMapping("/admin/username/{newUsername}")
+    @PutMapping("/username/{newUsername}")
     public ResponseEntity<?> updateAdminUsername(@PathVariable String newUsername) {
         if (newUsername == null || newUsername.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -112,14 +101,11 @@ public class AdminController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "200", description = "Password aggiornata con successo"),
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
-    @PutMapping("/admin/password")
-    public ResponseEntity<?> updateAdminPassword(@RequestBody String oldPassword,
-                                                 @RequestBody String newPassword) {
-        if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Dati non validi per l'aggiornamento della password");
-        }
+    @PutMapping("/password")
+    public ResponseEntity<?> updateAdminPassword(@RequestBody @Valid UpdatePasswordDTO updatePasswordDTO) {
         try {
+            String oldPassword = updatePasswordDTO.getOldPassword();
+            String newPassword = updatePasswordDTO.getNewPassword();
             adminService.updateAdminPassword(oldPassword, newPassword);
             return ResponseEntity.ok("Password aggiornata con successo");
         } catch (Exception e) {
@@ -166,6 +152,17 @@ public class AdminController extends CommonPlayerAdminController {
         return super.createTournament(tournamentDTO);
     }
 
+    //un admin può eliminare qualsiasi torneo
+    @Operation(summary = "Elimina un torneo")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Torneo eliminato con successo"),
+            @ApiResponse(responseCode = "404", description = "Torneo non trovato")
+    })
+    @DeleteMapping("/tournament/delete/{tournamentId}")
+    public ResponseEntity<?> deleteTournament(@PathVariable String tournamentId) {
+        return super.deleteTournament(tournamentId);
+    }
+
     @Operation(summary = "Get all tournaments", description = "Fetches all tournaments from the database")
     @GetMapping("/tournaments")
     public ResponseEntity<?> getAllTournaments() {
@@ -195,32 +192,12 @@ public class AdminController extends CommonPlayerAdminController {
     @PatchMapping("/tournament/removePlayer/{tournamentId}/{playerId}")
     public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
                                                              @PathVariable String playerId) {
-        try {
-            tournamentService.removePlayer(tournamentId, playerId);
-            return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error removing player: " + e.getMessage());
-        }
+        return super.removePlayerFromTournament(tournamentId, playerId);
     }
 
-    //todo: aggiustare, probabilemtne il problema è che bisogna copiare il matchDTO in match con copyProperties
     @Operation(summary = "Add match to tournament", description = "Adds a match to a specific tournament")
     @PatchMapping("/tournament/{tournamentId}/addMatch")
     public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody List<TournamentMatchDTO> tournamentMatchDTOs) {
-        try {
-            List<TournamentMatch> matches = new ArrayList<>();
-            for (TournamentMatchDTO matchDTO : tournamentMatchDTOs) {
-                TournamentMatch match = new TournamentMatch();
-                Match matchEntity = new Match();
-                BeanUtils.copyProperties(matchDTO.getMatch(), matchEntity);
-                match.setMatch(matchEntity);
-                match.setMatchGrade(matchDTO.getMatchGrade());
-                matches.add(match);
-            }
-            tournamentService.addMostImportantMatches(tournamentId, matches);
-            return ResponseEntity.ok("Match added to tournament " + tournamentId);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error adding match: " + e.getMessage());
-        }
+        return super.addMatchToTournament(tournamentId, tournamentMatchDTOs);
     }
 }

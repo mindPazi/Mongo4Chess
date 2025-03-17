@@ -1,9 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.DTO.MatchDTO;
-import com.example.demo.DTO.TournamentDTO;
-import com.example.demo.DTO.TournamentMatchDTO;
-import com.example.demo.DTO.TournamentPlayerDTO;
+import com.example.demo.DTO.*;
 import com.example.demo.model.*;
 import com.example.demo.service.AdminService;
 import jakarta.validation.Valid;
@@ -34,21 +31,10 @@ import com.example.demo.service.MatchService;
 
 //todo: delete friend
 //todo: continuare a testare le get
-//@RequiredArgsConstructor
-//todo: spostare i metodi in comune in CommonPlayerAdminController
 @RestController
 @RequestMapping("/api/player")
 @Tag(name = "Player Controller", description = "Player operations")
 public class PlayerController extends CommonPlayerAdminController {
-
-//    @Autowired
-//    private MatchService matchService;
-//
-//    @Autowired
-//    private PlayerService playerService;
-//
-//    @Autowired
-//    private TournamentService tournamentService;
 
     PlayerController(MatchService matchService, PlayerService playerService, AdminService adminService, TournamentService tournamentService) {
         super(playerService, matchService, adminService, tournamentService);
@@ -104,16 +90,7 @@ public class PlayerController extends CommonPlayerAdminController {
     })
     @DeleteMapping("/tournament/delete/{tournamentId}")
     public ResponseEntity<?> deleteTournament(@PathVariable String tournamentId) {
-        if (tournamentId == null || tournamentId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID torneo non valido");
-        }
-        try {
-            tournamentService.deleteTournament(tournamentId);
-            return ResponseEntity.ok("Torneo eliminato con successo");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        return super.deleteTournament(tournamentId);
     }
 
     @Operation(summary = "Ottieni statistiche del giocatore")
@@ -135,14 +112,14 @@ public class PlayerController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "200", description = "Username aggiornato con successo"),
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
-    @PutMapping("/username")
-    public ResponseEntity<?> updatePlayerUsername(@RequestParam String new_username) {
-        if (new_username == null || new_username.isEmpty()) {
+    @PutMapping("/username/{newUsername}")
+    public ResponseEntity<?> updatePlayerUsername(@PathVariable String newUsername) {
+        if (newUsername == null || newUsername.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Dati non validi per l'aggiornamento dello username");
         }
         try {
-            playerService.updatePlayerUsername(new_username);
+            playerService.updatePlayerUsername(newUsername);
             return ResponseEntity.ok("Username aggiornato con successo");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -156,14 +133,11 @@ public class PlayerController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
     @PutMapping("/password")
-    public ResponseEntity<?> updatePlayerPassword(@RequestParam String old_password,
-                                                  @RequestParam String new_password) {
-        if (old_password == null || old_password.isEmpty() || new_password == null || new_password.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Dati non validi per l'aggiornamento della password");
-        }
+    public ResponseEntity<?> updatePlayerPassword(@RequestBody @Valid UpdatePasswordDTO updatePasswordDTO) {
         try {
-            playerService.updatePlayerPassword(old_password, new_password);
+            String oldPassword = updatePasswordDTO.getOldPassword();
+            String newPassword = updatePasswordDTO.getNewPassword();
+            playerService.updatePlayerPassword(oldPassword, newPassword);
             return ResponseEntity.ok("Password aggiornata con successo");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -173,19 +147,8 @@ public class PlayerController extends CommonPlayerAdminController {
 
     @Operation(summary = "Add match to tournament", description = "Adds a match to a specific tournament")
     @PatchMapping("/tournament/{tournamentId}/addMatch")
-    public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody List<TournamentMatchDTO> matchDTOs) {
-        try {
-            List<TournamentMatch> matches = new ArrayList<>();
-            for (TournamentMatchDTO matchDTO : matchDTOs) {
-                TournamentMatch match = new TournamentMatch();
-                BeanUtils.copyProperties(matchDTO, match);
-                matches.add(match);
-            }
-            tournamentService.addMostImportantMatches(tournamentId, matches);
-            return ResponseEntity.ok("Match added to tournament " + tournamentId);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error adding match: " + e.getMessage());
-        }
+    public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody List<TournamentMatchDTO> tournamentMatchDTOs) {
+        return super.addMatchToTournament(tournamentId, tournamentMatchDTOs);
     }
 
     @Operation(summary = "Un giocatore si unisce a un torneo")
@@ -217,6 +180,13 @@ public class PlayerController extends CommonPlayerAdminController {
     @PatchMapping("/tournament/updatePositions/{tournamentId}")
     public ResponseEntity<String> updatePositions(@PathVariable String tournamentId, @RequestBody @Valid List<TournamentPlayerDTO> tournamentPlayerDTOs) {
         return super.updatePositions(tournamentId, tournamentPlayerDTOs);
+    }
+
+    @Operation(summary = "Remove player from tournament", description = "Removes a player from a specific tournament")
+    @PatchMapping("/tournament/removePlayer/{tournamentId}/{playerId}")
+    public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
+                                                             @PathVariable String playerId) {
+        return super.removePlayerFromTournament(tournamentId, playerId);
     }
 
     @Operation(summary = "Ottieni tutti i tornei")

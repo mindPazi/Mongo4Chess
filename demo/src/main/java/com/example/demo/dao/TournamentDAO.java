@@ -181,4 +181,18 @@ public class TournamentDAO {
         Query query = new Query(Criteria.where("startDate").gte(startDate).lte(endDate));
         return mongoTemplate.find(query, Tournament.class, "TournamentCollection");
     }
+
+    public void updateCreator(String currentUsername, String newUsername) {
+        Query query = new Query(Criteria.where("creator").is(currentUsername));
+        Update update = new Update().set("creator", newUsername);
+        mongoTemplate.updateMulti(query, update, Tournament.class);
+        System.out.println("Creator updated successfully: " + currentUsername + " to " + newUsername);
+    }
+
+    public void updatePlayerUsernameInTournaments(String currentUsername, String newUsername) {
+        Query query = new Query(Criteria.where("players.username").is(currentUsername).orOperator(Criteria.where("creator").is(currentUsername)));
+        Update update = new Update().set("players.$.username", newUsername).set("creator", newUsername);
+        mongoTemplate.updateMulti(query, update, Tournament.class);
+        System.out.println("Player username and creator updated successfully: " + currentUsername + " to " + newUsername);
+    }
 }

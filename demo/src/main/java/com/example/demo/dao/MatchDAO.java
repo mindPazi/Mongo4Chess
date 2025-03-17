@@ -210,6 +210,14 @@ public class MatchDAO {
         matchCollection.deleteMany(query);
     }
 
+    public void updatePlayerUsernameInMatches(String currentUsername, String newUsername) {
+        Document query = new Document("$or", Arrays.asList(
+                new Document("white", currentUsername),
+                new Document("black", currentUsername)));
+        Document update = new Document("$set", new Document("white", newUsername));
+        matchCollection.updateMany(query, update);
+    }
+
 //    public void addMatches(List<Match> matches) {
 //        List<Document> matchDocuments = matches.stream()
 //                .map(Match::toJson)

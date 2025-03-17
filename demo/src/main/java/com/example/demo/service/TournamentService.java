@@ -49,7 +49,7 @@ public class TournamentService {
             throw new RuntimeException("Non sei il creatore del torneo o non hai i privilegi amministratore.");
         }
         tournamentDAO.deleteTournament(tournamentId);
-        for(TournamentPlayer player : tournamentDAO.getTournament(tournamentId).getPlayers()){
+        for (TournamentPlayer player : tournamentDAO.getTournament(tournamentId).getPlayers()) {
             playerDAO.removeTournament(tournamentId, player.getUsername());
         }
     }
@@ -78,10 +78,10 @@ public class TournamentService {
 
     public void joinTournament(String tournamentId) {
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String playerUsername = authentication.getName();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String playerUsername = authentication.getName();
 
-            addPlayerToTournament(tournamentId, playerUsername);
+        addPlayerToTournament(tournamentId, playerUsername);
     }
 
     public List<Tournament> getCreatedTournaments(String creator) {
@@ -128,39 +128,33 @@ public class TournamentService {
     }
 
     public void removePlayer(String tournamentId, String playerId) {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String creator = tournamentDAO.getTournament(tournamentId).getCreator();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String creator = tournamentDAO.getTournament(tournamentId).getCreator();
 
-            if (authentication.getName().equals(creator))
-                throw new RuntimeException("Non sei il creatore del torneo");
+        if (!authentication.getName().equals(creator) && !authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")))
+            throw new RuntimeException("Non sei il creatore del torneo");
 
-            tournamentDAO.removePlayer(tournamentId, playerId);
-            tournamentDAO.openTournament(tournamentId);
-            playerDAO.removeTournament(tournamentId, playerId);
+        tournamentDAO.removePlayer(tournamentId, playerId);
+        tournamentDAO.openTournament(tournamentId);
+        playerDAO.removeTournament(tournamentId, playerId);
 
-            logger.info("Giocatore {} rimosso con successo dal torneo {}", playerId, tournamentId);
-        } catch (Exception e) {
-            logger.error("Errore durante la rimozione del giocatore {} dal torneo {}", playerId, tournamentId, e);
-            throw new RuntimeException(
-                    "Errore nella rimozione del giocatore " + playerId + " dal torneo " + tournamentId);
-        }
+        logger.info("Giocatore {} rimosso con successo dal torneo {}", playerId, tournamentId);
     }
 
     public void updatePositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
-            Tournament tournament = tournamentDAO.getTournament(tournamentId);
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String creator = tournament.getCreator();
+        Tournament tournament = tournamentDAO.getTournament(tournamentId);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String creator = tournament.getCreator();
 
-            if (!Objects.equals(authentication.getName(), creator))
-                throw new RuntimeException("Non sei il creatore del torneo");
+        if (!Objects.equals(authentication.getName(), creator))
+            throw new RuntimeException("Non sei il creatore del torneo");
 
-            if (!tournament.getIsClosed())
-                throw new RuntimeException("Torneo ancora non chiuso");
+        if (!tournament.getIsClosed())
+            throw new RuntimeException("Torneo ancora non chiuso");
 
-            tournamentDAO.updatePositions(tournamentPlayers, tournamentId);
-            playerDAO.updateTournamentPositions(tournamentPlayers, tournamentId);
-            logger.info("Posizioni aggiornate con successo per il torneo {}", tournamentId);
+        tournamentDAO.updatePositions(tournamentPlayers, tournamentId);
+        playerDAO.updateTournamentPositions(tournamentPlayers, tournamentId);
+        logger.info("Posizioni aggiornate con successo per il torneo {}", tournamentId);
     }
 
     // le partite fatte nei tornei non incidono sullo storico elo dei giocatori, nè vengono automaticamente inserite nella collection di matches

@@ -1,7 +1,9 @@
 package com.example.demo.service;
 
+import com.example.demo.dao.MatchDAO;
 import com.example.demo.dao.PlayerDAO;
 import com.example.demo.dao.PlayerNodeDAO;
+import com.example.demo.dao.TournamentDAO;
 import com.example.demo.model.*;
 import lombok.Setter;
 
@@ -20,16 +22,16 @@ public class PlayerService {
     private static final Logger logger = LoggerFactory.getLogger(PlayerService.class);
     private final PlayerDAO playerDAO;
     private final PlayerNodeDAO playerNodeDAO;
-//    @Setter
-//    private Player player;
-//    @Setter
-//    private PlayerNode playerNode;
+    private final MatchDAO matchDAO;
+    private final TournamentDAO tournamentDAO;
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final static int EloConstant = 30;
 
-    public PlayerService(PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO) {
+    public PlayerService(PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO, MatchDAO matchDAO, TournamentDAO tournamentDAO) {
         this.playerDAO = playerDAO;
         this.playerNodeDAO = playerNodeDAO;
+        this.matchDAO = matchDAO;
+        this.tournamentDAO = tournamentDAO;
     }
 
     public void banPlayer(String playerUsername) {
@@ -84,6 +86,9 @@ public class PlayerService {
         String currentUsername = authentication.getName();
         try {
             playerDAO.updatePlayerUsername(currentUsername, newUsername);
+            matchDAO.updatePlayerUsernameInMatches(currentUsername, newUsername);
+            tournamentDAO.updatePlayerUsernameInTournaments(currentUsername, newUsername);
+            playerNodeDAO.updatePlayerUsername(currentUsername, newUsername);
         } catch (Exception e) {
             logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", currentUsername, newUsername,
                     e);

@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.AdminDAO;
+import com.example.demo.dao.TournamentDAO;
 import com.example.demo.model.Match;
 
 import org.slf4j.Logger;
@@ -19,15 +20,17 @@ public class AdminService {
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
     private final AdminDAO adminDAO;
     private final PlayerService playerService;
+    private final TournamentDAO tournamentDAO;
     private final MatchService matchService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Autowired
-    public AdminService(AdminDAO adminDAO, TournamentService tournamentService,
+    public AdminService(AdminDAO adminDAO, TournamentDAO tournamentDAO,
             PlayerService playerService, MatchService matchService) {
         this.adminDAO = adminDAO;
         this.playerService = playerService;
         this.matchService = matchService;
+        this.tournamentDAO = tournamentDAO;
     }
 
     public void updateAdminPassword(String oldPassword, String newPassword) {
@@ -69,6 +72,7 @@ public class AdminService {
         String currentUsername = authentication.getName();
         try {
             adminDAO.updateAdminUsername(currentUsername, newUsername);
+            tournamentDAO.updateCreator(currentUsername, newUsername);
         } catch (Exception e) {
             logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", currentUsername, newUsername, e);
             throw new RuntimeException(
