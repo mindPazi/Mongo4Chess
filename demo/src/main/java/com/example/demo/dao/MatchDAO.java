@@ -5,11 +5,14 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.AggregateIterable;
 import org.bson.Document;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Repository;
 import com.example.demo.model.Match;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.data.mongodb.core.query.Query;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -19,16 +22,19 @@ import java.util.stream.Collectors;
 public class MatchDAO {
     private final MongoCollection<Document> matchCollection;
     private final MongoCollection<Document> playerCollection;
+    private final MongoTemplate mongoTemplate;
 
-    public MatchDAO(MongoClient mongoClient) {
+    public MatchDAO(MongoClient mongoClient, MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
         MongoDatabase database = mongoClient.getDatabase("chessDB");
         this.matchCollection = database.getCollection("MatchCollection");
         this.playerCollection = database.getCollection("PlayerCollection");
     }
 
     public void saveMatch(Match match) {
-        Document matchDocument = Document.parse(match.toJson());
-        matchCollection.insertOne(matchDocument);
+        //Document matchDocument = Document.parse(match.toJson());
+        //matchCollection.insertOne(matchDocument);
+        mongoTemplate.save(match, "MatchCollection");
         playerCollection.updateOne(new Document("username", match.getWhite()),
                 new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getWhite()))));
         playerCollection.updateOne(new Document("username", match.getBlack()),
@@ -98,9 +104,14 @@ public class MatchDAO {
         return countResult != null ? countResult.getInteger("total", 0) : 0;
     }
 
-    public List<Document> getMatches() {
-        return matchCollection.find().into(Arrays.asList());
+//    public List<Document> getMatches() {
+//        return matchCollection.find().into(Arrays.asList());
+//    }
+
+    public List<Match> getMatches() {
+        return mongoTemplate.findAll(Match.class, "MatchCollection");
     }
+
 
     public List<Document> getMatchesByPlayer(String player) {
         Document query = new Document("$or", Arrays.asList(
@@ -216,6 +227,17 @@ public class MatchDAO {
                 new Document("black", currentUsername)));
         Document update = new Document("$set", new Document("white", newUsername));
         matchCollection.updateMany(query, update);
+    }
+
+    public List<Match> getMatchesByDate(Date startDate, Date endDate) {
+        Query query = new Query(Criteria.where("date").gte(startDate).lte(endDate));
+        return mongoTemplate.find(query, Match.class, "MatchCollection");
+    }
+
+    public List<Match> getMatchesByElo(int minElo, int maxElo) {
+        Query query = new Query(Criteria.where("whiteElo").gte(minElo).lte(maxElo)
+                .and("blackElo").gte(minElo).lte(maxElo));
+        return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
 //    public void addMatches(List<Match> matches) {

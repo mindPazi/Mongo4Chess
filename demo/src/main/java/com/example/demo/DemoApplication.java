@@ -12,7 +12,6 @@ import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 
 @SpringBootApplication
 
-//todo: assicurarsi che il ban vieti l'accesso al player
 //todo: gestire la consistenza tra neo4j e mongo
 public class DemoApplication {
 	private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);

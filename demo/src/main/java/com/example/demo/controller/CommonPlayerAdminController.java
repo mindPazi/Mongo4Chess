@@ -15,6 +15,7 @@ import com.example.demo.service.TournamentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -131,6 +133,15 @@ public abstract class CommonPlayerAdminController {
             return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error removing player: " + e.getMessage());
+        }
+    }
+
+
+    public ResponseEntity<?> getTournamentsByDate(@PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, @PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        try {
+            return ResponseEntity.ok(tournamentService.getTournamentsByDate(startDate, endDate));
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante il recupero dei tornei: " + e.getMessage());
         }
     }
 

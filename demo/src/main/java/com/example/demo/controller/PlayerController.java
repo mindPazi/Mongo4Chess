@@ -9,11 +9,13 @@ import com.example.demo.service.PlayerService;
 import com.example.demo.service.TournamentService;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -213,6 +215,13 @@ public class PlayerController extends CommonPlayerAdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Errore durante il recupero dei tornei attivi: " + e.getMessage());
         }
+    }
+
+
+    @Operation(summary = "Get tournaments by date", description = "Get tournaments by date")
+    @GetMapping("/tournaments/date/{startDate}/{endDate}")
+    public ResponseEntity<?> getTournamentsByDate(@PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, @PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        return super.getTournamentsByDate(startDate, endDate);
     }
 
     @Operation(summary = "Ottieni i tornei creati da un giocatore")

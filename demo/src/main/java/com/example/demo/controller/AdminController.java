@@ -171,8 +171,8 @@ public class AdminController extends CommonPlayerAdminController {
 
     @Operation(summary = "Get tournaments by date", description = "Get tournaments by date")
     @GetMapping("/tournaments/date/{startDate}/{endDate}")
-    public ResponseEntity<List<Tournament>> getTournamentsByDate(@PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, @PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
-        return ResponseEntity.ok(tournamentService.getTournamentsByDate(startDate, endDate));
+    public ResponseEntity<?> getTournamentsByDate(@PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, @PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        return super.getTournamentsByDate(startDate, endDate);
     }
 
 

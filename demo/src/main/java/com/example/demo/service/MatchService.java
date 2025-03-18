@@ -82,7 +82,7 @@ public class MatchService {
         return matchDAO.getNumOfWinsAndDrawsPerElo(elomin, elomax);
     }
 
-    public List<Document> getMatches() {
+    public List<Match> getMatches() {
         return matchDAO.getMatches();
     }
 
@@ -100,5 +100,13 @@ public class MatchService {
 
     public void deleteMatchesBeforeDate(Date date) {
         matchDAO.deleteMatchesBeforeDate(date);
+    }
+
+    public List<Match> getMatchesByDate(Date startDate, Date endDate) {
+        return matchDAO.getMatchesByDate(startDate, endDate);
+    }
+
+    public List<Match> getMatchesByElo(int minElo, int maxElo) {
+        return matchDAO.getMatchesByElo(minElo, maxElo);
     }
 }
