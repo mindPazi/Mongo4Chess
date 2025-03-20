@@ -78,7 +78,7 @@ public class MatchService {
         matchDAO.deleteAllMatchesByPlayer(player);
     }
 
-    public int getNumOfWinsAndDrawsPerElo(int elomin, int elomax) {
+    public List<Document> getNumOfWinsAndDrawsPerElo(int elomin, int elomax) {
         return matchDAO.getNumOfWinsAndDrawsPerElo(elomin, elomax);
     }
 
@@ -86,7 +86,7 @@ public class MatchService {
         return matchDAO.getMatches();
     }
 
-    public List<Document> getMatchesByPlayer(String player) {
+    public List<Match> getMatchesByPlayer(String player) {
         return matchDAO.getMatchesByPlayer(player);
     }
 

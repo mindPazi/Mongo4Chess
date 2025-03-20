@@ -89,7 +89,7 @@ public class PlayerDAO {
         if(matchDocs != null) {
             for (Document matchDoc : matchDocs) {
                 PlayerMatch match = new PlayerMatch();
-                match.setElo(matchDoc.getInteger("Elo"));
+                match.setElo(matchDoc.getInteger("elo"));
                 match.setDate(matchDoc.getDate("date"));
                 matches.add(match);
             }

@@ -63,48 +63,47 @@ public class PublicController {
 
     @Operation(summary = "Get matches by player", description = "Get matches by player")
     @GetMapping("/matches/{username}")
-    public ResponseEntity<List<Document>> getMatchesByPlayer(
+    public ResponseEntity<?> getMatchesByPlayer(
             @PathVariable String username) {
-        List<Document> matches = matchService.getMatchesByPlayer(username);
-        return ResponseEntity.ok(matches);
+        try {
+            List<Match> matches = matchService.getMatchesByPlayer(username);
+            return ResponseEntity.ok(matches);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Openings with higher win rate", description = "Get openings with higher win rate")
-    @GetMapping("/openings/higher-win-rate")
-    public ResponseEntity<Map<String, Object>> getOpeningWithHigherWinRatePerElo(@RequestParam int elomin,
-                                                                                 @RequestParam int elomax) {
-        Document openingWithHigherWinRate = matchService.getOpeningWithHigherWinRatePerElo(elomin, elomax);
-        return ResponseEntity.ok(openingWithHigherWinRate);
+    @GetMapping("/openings/higher-win-rate/{eloMin}/{eloMax}")
+    public ResponseEntity<?> getOpeningWithHigherWinRatePerElo(@PathVariable int eloMin,
+                                                               @PathVariable int eloMax) {
+        try {
+            Document openingWithHigherWinRate = matchService.getOpeningWithHigherWinRatePerElo(eloMin, eloMax);
+            return ResponseEntity.ok(openingWithHigherWinRate);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Most played openings", description = "Get most played openings")
-    @GetMapping("/openings/most-played")
-    public ResponseEntity<List<Map<String, Object>>> getMostPlayedOpeningsPerElo(
-            @RequestParam int elomin, @RequestParam int elomax) {
+    @GetMapping("/openings/most-played/{eloMin}/{eloMax}")
+    public ResponseEntity<?> getMostPlayedOpeningsPerElo(
+            @PathVariable int eloMin, @PathVariable int eloMax) {
 
-        List<Document> documents = matchService.getMostPlayedOpeningsPerElo(elomin, elomax);
+        List<Document> mostPlayedOpenings = matchService.getMostPlayedOpeningsPerElo(eloMin, eloMax);
 
-        if (documents == null || documents.isEmpty()) {
+        if (mostPlayedOpenings == null || mostPlayedOpenings.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-
-        List<Map<String, Object>> mostPlayedOpenings = documents.stream()
-                .map(Document::entrySet)
-                .map(entrySet -> entrySet.stream()
-                        .collect(Collectors.toMap(
-                                Map.Entry::getKey,
-                                Map.Entry::getValue)))
-                .collect(Collectors.toList());
-
         return ResponseEntity.ok(mostPlayedOpenings);
     }
 
     @Operation(summary = "Get number of wins and draws per elo", description = "Get number of wins and draws per elo")
-    @GetMapping("/matches/win-stats")
-    public ResponseEntity<Integer> getNumOfWinsAndDrawsPerElo(
-            @RequestParam int elomin, @RequestParam int elomax) {
+    @GetMapping("/matches/win-stats/{eloMin}/{eloMax}")
+    public ResponseEntity<?> getNumOfWinsAndDrawsPerElo(
+            @PathVariable int eloMin, @PathVariable int eloMax) {
 
-        int result = matchService.getNumOfWinsAndDrawsPerElo(elomin, elomax);
+        List<Document> result = matchService.getNumOfWinsAndDrawsPerElo(eloMin, eloMax);
         return ResponseEntity.ok(result); // Ora il tipo è Integer, non int
     }
 

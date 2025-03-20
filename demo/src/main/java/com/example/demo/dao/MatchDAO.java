@@ -1,21 +1,23 @@
 package com.example.demo.dao;
 
+import com.example.demo.model.PlayerMatch;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.AggregateIterable;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 import com.example.demo.model.Match;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.data.mongodb.core.query.Query;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -35,18 +37,33 @@ public class MatchDAO {
         //Document matchDocument = Document.parse(match.toJson());
         //matchCollection.insertOne(matchDocument);
         mongoTemplate.save(match, "MatchCollection");
-        playerCollection.updateOne(new Document("username", match.getWhite()),
-                new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getWhite()))));
-        playerCollection.updateOne(new Document("username", match.getBlack()),
-                new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getBlack()))));
+        PlayerMatch whitePlayerMatch = new PlayerMatch(match.getWhiteElo(), match.getDate());
+        PlayerMatch blackPlayerMatch = new PlayerMatch(match.getBlackElo(), match.getDate());
+
+        mongoTemplate.updateFirst(
+                new Query(Criteria.where("username").is(match.getWhite())),
+                new Update().push("matches", whitePlayerMatch),
+                "PlayerCollection"
+        );
+
+        mongoTemplate.updateFirst(
+                new Query(Criteria.where("username").is(match.getBlack())),
+                new Update().push("matches", blackPlayerMatch),
+                "PlayerCollection"
+        );
+
+//        playerCollection.updateOne(new Document("username", match.getWhite()),
+//                new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getWhite()))));
+//        playerCollection.updateOne(new Document("username", match.getBlack()),
+//                new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getBlack()))));
     }
 
     private Document convertMatchToDocumentForPlayer(Match match, String username) {
         if (match.getWhite().equals(username)) {
-            return new Document("Elo", match.getWhiteElo())
+            return new Document("elo", match.getWhiteElo())
                     .append("date", match.getDate());
         }
-        return new Document("Elo", match.getBlackElo())
+        return new Document("elo", match.getBlackElo())
                 .append("date", match.getDate());
     }
 
@@ -86,23 +103,23 @@ public class MatchDAO {
         return results.into(Arrays.asList()).stream().collect(Collectors.toList());
     }
 
-    public int getNumOfWinsAndDrawsPerElo(int elomin, int elomax) {
-        Document matchQuery = new Document("$match", new Document("$and", Arrays.asList(
-                new Document("whiteElo", new Document("$gte", elomin).append("$lte", elomax)),
-                new Document("blackElo", new Document("$gte", elomin).append("$lte", elomax)),
-                new Document("result", new Document("$in", Arrays.asList("W", "D"))) // Conta solo
-                // vittorie e
-                // pareggi
-        )));
-
-        Document countQuery = new Document("$group", new Document("_id", null)
-                .append("total", new Document("$sum", 1)));
-
-        AggregateIterable<Document> result = matchCollection.aggregate(Arrays.asList(matchQuery, countQuery));
-
-        Document countResult = result.first();
-        return countResult != null ? countResult.getInteger("total", 0) : 0;
-    }
+//    public int getNumOfWinsAndDrawsPerElo(int elomin, int elomax) {
+//        Document matchQuery = new Document("$match", new Document("$and", Arrays.asList(
+//                new Document("whiteElo", new Document("$gte", elomin).append("$lte", elomax)),
+//                new Document("blackElo", new Document("$gte", elomin).append("$lte", elomax)),
+//                new Document("result", new Document("$in", Arrays.asList("W", "D"))) // Conta solo
+//                // vittorie e
+//                // pareggi
+//        )));
+//
+//        Document countQuery = new Document("$group", new Document("_id", null)
+//                .append("total", new Document("$sum", 1)));
+//
+//        AggregateIterable<Document> result = matchCollection.aggregate(Arrays.asList(matchQuery, countQuery));
+//
+//        Document countResult = result.first();
+//        return countResult != null ? countResult.getInteger("total", 0) : 0;
+//    }
 
 //    public List<Document> getMatches() {
 //        return matchCollection.find().into(Arrays.asList());
@@ -113,11 +130,9 @@ public class MatchDAO {
     }
 
 
-    public List<Document> getMatchesByPlayer(String player) {
-        Document query = new Document("$or", Arrays.asList(
-                new Document("white", player),
-                new Document("black", player)));
-        return matchCollection.find(query).into(Arrays.asList());
+    public List<Match> getMatchesByPlayer(String player) {
+        Query query = new Query(new Criteria().orOperator(Criteria.where("white").is(player), Criteria.where("black").is(player)));
+        return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
     public Document getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
@@ -127,16 +142,16 @@ public class MatchDAO {
                                 new Document("$gte", elomin).append("$lte", elomax)),
                         new Document("blackElo",
                                 new Document("$gte", elomin).append("$lte", elomax))))),
-                new Document("$group", new Document("_id", "$ECO")
+                new Document("$group", new Document("_id", "$eco")
                         .append("total", new Document("$sum", 1))
                         .append("wins", new Document("$sum",
                                 new Document("$cond", Arrays.asList(
                                         new Document("$eq",
                                                 Arrays.asList("$result",
-                                                        "W")),
+                                                        "1-0")),
                                         1, 0))))),
                 new Document("$project", new Document("_id", 0)
-                        .append("ECO", "$_id")
+                        .append("eco", "$_id")
                         .append("total", 1)
                         .append("winRate",
                                 new Document("$divide",
@@ -154,12 +169,14 @@ public class MatchDAO {
                                 new Document("$gte", elomin).append("$lte", elomax)),
                         new Document("blackElo",
                                 new Document("$gte", elomin).append("$lte", elomax))))),
-                new Document("$group", new Document("_id", "$ECO")
+                new Document("$group", new Document("_id", "$eco")
                         .append("total", new Document("$sum", 1))),
                 new Document("$sort", new Document("total", -1)),
                 new Document("$limit", 10)));
 
-        return results.into(Arrays.asList()).stream().collect(Collectors.toList());
+        List<Document> resultList = new ArrayList<>();
+        results.into(resultList);
+        return resultList;
     }
 
     public List<Document> executeAggregation(List<Document> pipeline) {
@@ -217,16 +234,16 @@ public class MatchDAO {
     }
 
     public void deleteMatchesBeforeDate(Date date) {
-        Document query = new Document("date", new Document("$lt", date));
-        matchCollection.deleteMany(query);
+        Query query = new Query(Criteria.where("date").lt(date));
+        mongoTemplate.remove(query, "MatchCollection");
     }
 
     public void updatePlayerUsernameInMatches(String currentUsername, String newUsername) {
-        Document query = new Document("$or", Arrays.asList(
-                new Document("white", currentUsername),
-                new Document("black", currentUsername)));
-        Document update = new Document("$set", new Document("white", newUsername));
-        matchCollection.updateMany(query, update);
+        Query query = new Query(new Criteria().orOperator(
+                Criteria.where("white").is(currentUsername),
+                Criteria.where("black").is(currentUsername)));
+        Update update = new Update().set("white", newUsername).set("black", newUsername);
+        mongoTemplate.updateMulti(query, update, "MatchCollection");
     }
 
     public List<Match> getMatchesByDate(Date startDate, Date endDate) {
@@ -240,17 +257,64 @@ public class MatchDAO {
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
-//    public void addMatches(List<Match> matches) {
-//        List<Document> matchDocuments = matches.stream()
-//                .map(Match::toJson)
-//                .map(Document::parse)
-//                .collect(Collectors.toList());
-//        matchCollection.insertMany(matchDocuments);
-//        for (Match match : matches) {
-//            playerCollection.updateOne(new Document("username", match.getWhite()),
-//                    new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getWhite()))));
-//            playerCollection.updateOne(new Document("username", match.getBlack()),
-//                    new Document("$push", new Document("matches", convertMatchToDocumentForPlayer(match, match.getBlack()))));
-//        }
-//    }
+    private Document createGroupStage(String id) {
+        return new Document("$group", new Document("_id", id)
+                .append("wins_checkmated", createSumCondition("win", "checkmated"))
+                .append("wins_resigned", createSumCondition("win", "resigned"))
+                .append("wins_timeout", createSumCondition("win", "timeout"))
+                .append("wins_abandoned", createSumCondition("win", "abandoned"))
+                .append("draws_timevsinsufficient", createSumCondition("draw", "timevsinsufficient"))
+                .append("draws_repetition", createSumCondition("draw", "repetition"))
+                .append("draws_insufficient", createSumCondition("draw", "insufficient"))
+                .append("draws_stalemate", createSumCondition("draw", "stalemate"))
+                .append("draws_agreed", createSumCondition("draw", "agreed")));
+    }
+
+    private Document createSumCondition(String result, String specificResult) {
+        if (Objects.equals(result, "draw")) {
+            return new Document("$sum", new Document("$cond", Arrays.asList(
+                    new Document("$and", Arrays.asList(
+                            new Document("$eq", Arrays.asList("$result", "1/2-1/2")),
+                            new Document("$eq", Arrays.asList("$reason", specificResult)))),
+                    1,
+                    0)));
+        } else {
+            return new Document("$sum", new Document("$cond", Arrays.asList(
+                    new Document("$and", Arrays.asList(
+                            new Document("$or", Arrays.asList(
+                                    // white won
+                                    new Document("$eq", Arrays.asList("$result", "1-0")),
+                                    // black won
+                                    new Document("$eq", Arrays.asList("$result", "0-1")))),
+                            new Document("$or", Arrays.asList(
+                                    new Document("$eq", Arrays.asList("$reason", specificResult)))))),
+                    1,
+                    0)));
+        }
+    }
+
+    private Document createMatchStage(int EloMin, int EloMax) {
+        return new Document("$match", new Document("$and", Arrays.asList(
+                new Document("whiteElo", new Document("$gt", EloMin).append("$lte", EloMax)),
+                new Document("blackElo", new Document("$gt", EloMin).append("$lte", EloMax)))));
+    }
+
+    public List<Document> getNumOfWinsAndDrawsPerElo(int EloMin, int EloMax) {
+        String EloRange;
+        if (EloMax == Integer.MAX_VALUE) {
+            EloRange = EloMin + "-infinity";
+        } else {
+            EloRange = EloMin + "-" + EloMax;
+        }
+        Bson facetStage = new Document("$facet", new Document()
+                .append(EloRange, Arrays.asList(
+                        createMatchStage(EloMin, EloMax),
+                        createGroupStage(EloRange))));
+        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(facetStage));
+        List<Document> resultList = new ArrayList<>();
+        results.into(resultList);
+        return resultList;
+        //return matchDAO.executeAggregation(Arrays.asList(facetStage));
+    }
+
 }
