@@ -1,11 +1,9 @@
 package com.example.demo.dao;
 
 import com.example.demo.model.Tournament;
-import com.mongodb.BasicDBObject;
 import com.mongodb.client.result.UpdateResult;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
-import com.example.demo.model.Player;
 import com.example.demo.model.Match;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -123,7 +121,7 @@ public class TournamentDAO {
     }
 
     // Aggiunge un giocatore al torneo
-    public void addPlayer(String tournamentId, Map<String,Integer> player) {
+    public void addPlayer(String tournamentId, Map<String, Integer> player) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
         Update update = new Update().push("players", player);
         mongoTemplate.updateFirst(query, update, Tournament.class);
@@ -133,7 +131,7 @@ public class TournamentDAO {
     // Rimuove un giocatore dal torneo
     public void removePlayer(String tournamentId, String player) {
         Query query = new Query(Criteria.where("id").is(tournamentId).and("players." + player).exists(true));
-        Update update = new Update().pull("players", Collections.singletonMap(player,0));
+        Update update = new Update().pull("players", Collections.singletonMap(player, 0));
         UpdateResult result = mongoTemplate.updateFirst(query, update, Tournament.class);
         if (result.getModifiedCount() > 0) {
             System.out.println("Giocatore " + player + " rimosso dal torneo: " + tournamentId);
@@ -142,9 +140,8 @@ public class TournamentDAO {
         }
     }
 
-
     public Tournament getTournament(String tournamentId) {
-        try{
+        try {
             return mongoTemplate.findById(tournamentId, Tournament.class, "TournamentCollection");
         } catch (Exception e) {
             System.out.println("Error getting tournament: " + e.getMessage());

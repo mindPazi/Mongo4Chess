@@ -2,12 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.DTO.MatchDTO;
 import com.example.demo.DTO.TournamentDTO;
-import com.example.demo.DemoApplication;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +22,6 @@ import com.example.demo.model.Match;
 import com.example.demo.model.Tournament;
 import com.example.demo.service.AdminService;
 import com.example.demo.service.TournamentService;
-
 
 import java.util.List;
 
@@ -103,7 +98,7 @@ public class AdminController {
     })
     @PutMapping("/admin/password")
     public ResponseEntity<?> updateAdminPassword(@RequestBody String oldPassword,
-                                                 @RequestBody String newPassword) {
+            @RequestBody String newPassword) {
         if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Dati non validi per l'aggiornamento della password");
@@ -124,7 +119,8 @@ public class AdminController {
             Match match = new Match();
             BeanUtils.copyProperties(matchDTO, match);
             matchService.saveMatch(match);
-            return ResponseEntity.status(HttpStatus.CREATED).body(match); // Restituisci l'oggetto Match creato (o un DTO di risposta)
+            return ResponseEntity.status(HttpStatus.CREATED).body(match); // Restituisci l'oggetto Match creato (o un
+                                                                          // DTO di risposta)
         } catch (Exception e) {
             // Gestione degli errori
             System.out.println(e.getMessage());
@@ -191,7 +187,7 @@ public class AdminController {
     @Operation(summary = "Add player to tournament", description = "Adds a player to a specific tournament")
     @PatchMapping("/tournament/addPlayer/{tournamentId}/{playerId}")
     public ResponseEntity<String> addPlayerToTournament(@PathVariable String tournamentId,
-                                                        @PathVariable String playerId) {
+            @PathVariable String playerId) {
         try {
             tournamentService.addPlayer(tournamentId, playerId);
             return ResponseEntity.ok("Player " + playerId + " added to tournament " + tournamentId);
@@ -203,7 +199,7 @@ public class AdminController {
     @Operation(summary = "Remove player from tournament", description = "Removes a player from a specific tournament")
     @PatchMapping("/tournament/removePlayer/{tournamentId}/{playerId}")
     public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
-                                                             @PathVariable String playerId) {
+            @PathVariable String playerId) {
         try {
             tournamentService.removePlayer(tournamentId, playerId);
             return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);
