@@ -11,7 +11,6 @@ import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 @EnableNeo4jRepositories(basePackages = { "com.example.demo.repository.neo4j", "com.example.demo.dao" })
 
 @SpringBootApplication
-
 //todo: gestire la consistenza tra neo4j e mongo
 public class DemoApplication {
 	private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);

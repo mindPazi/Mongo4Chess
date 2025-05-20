@@ -4,29 +4,21 @@ import com.example.demo.DTO.*;
 import com.example.demo.model.*;
 import com.example.demo.service.AdminService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import com.example.demo.service.PlayerService;
 import com.example.demo.service.TournamentService;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.demo.service.MatchService;
@@ -206,10 +198,10 @@ public class PlayerController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "401", description = "Utente non autenticato"),
             @ApiResponse(responseCode = "500", description = "Errore interno del server")
     })
-    @GetMapping("/tournament/active")
-    public ResponseEntity<?> getActiveTournaments() {
+    @GetMapping("/tournament/available")
+    public ResponseEntity<?> getAvailableTournaments() {
         try {
-            List<Tournament> tournaments = tournamentService.getActiveTournaments();
+            List<Tournament> tournaments = tournamentService.getAvailableTournaments();
             return ResponseEntity.ok(tournaments);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -229,8 +221,8 @@ public class PlayerController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "200", description = "Elenco tornei creati ottenuto con successo")
     })
     @GetMapping("/tournament/created/{creator}")
-    public ResponseEntity<List<Tournament>> getCreatedTournaments(@PathVariable String creator) {
-        return ResponseEntity.ok(tournamentService.getCreatedTournaments(creator));
+    public ResponseEntity<?> getCreatedTournaments(@PathVariable String creator) {
+        return super.getCreatedTournaments(creator);
     }
 
     @Operation(summary = "Ottieni l'andamento dell'ELO di un giocatore")
@@ -248,13 +240,28 @@ public class PlayerController extends CommonPlayerAdminController {
         }
     }
 
+    @Operation(summary="Recupera la lista degli amici")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista degli amici recuperata con successo"),
+            @ApiResponse(responseCode = "400", description = "Errore nel recupero")
+    })
+    @GetMapping("/get_friends")
+    public ResponseEntity<?> getFriends(){
+        try{
+            return ResponseEntity.ok(playerService.getFriends());
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("Errore nel recupero");
+        }
+    }
+
     @Operation(summary = "Aggiungi un amico alla lista amici del giocatore")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Amico aggiunto con successo"),
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
-    @PostMapping("/add_friend")
-    public ResponseEntity<?> addFriend(@RequestParam String friendId) {
+    @PostMapping("/add_friend/{friendId}")
+    public ResponseEntity<?> addFriend(@PathVariable String friendId) {
         if (friendId == null || friendId.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID amico non valido");
         }

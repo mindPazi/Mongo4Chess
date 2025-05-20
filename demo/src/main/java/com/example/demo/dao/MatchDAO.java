@@ -269,13 +269,17 @@ public class MatchDAO {
     }
 
     public List<Match> getMatchesByDate(Date startDate, Date endDate) {
-        Query query = new Query(Criteria.where("date").gte(startDate).lte(endDate));
+        Query query = new Query(Criteria.where("date").gte(startDate).lte(endDate))
+                .with(Sort.by(Sort.Direction.DESC, "date")) // Sort by date in descending order
+                .limit(10); // Limit the results to 10
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
     public List<Match> getMatchesByElo(int minElo, int maxElo) {
         Query query = new Query(Criteria.where("whiteElo").gte(minElo).lte(maxElo)
-                .and("blackElo").gte(minElo).lte(maxElo));
+                .and("blackElo").gte(minElo).lte(maxElo))
+                .with(Sort.by(Sort.Direction.DESC, "date")) // Sort by date in descending order
+                .limit(10); // Limit the results to 10
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 

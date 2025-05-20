@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
+//todo: getTournamentsCreatedBy
 @RestController
 @RequestMapping("/api/admin")
 @Tag(name = "Admin Controller", description = "Admin operations")
@@ -175,6 +175,14 @@ public class AdminController extends CommonPlayerAdminController {
         return super.getTournamentsByDate(startDate, endDate);
     }
 
+    @Operation(summary = "Ottieni i tornei creati da un giocatore")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Elenco tornei creati ottenuto con successo")
+    })
+    @GetMapping("/tournament/created/{creator}")
+    public ResponseEntity<?> getCreatedTournaments(@PathVariable String creator) {
+        return super.getCreatedTournaments(creator);
+    }
 
     @Operation(summary = "Add player to tournament", description = "Adds a player to a specific tournament")
     @PatchMapping("/tournament/addPlayer/{tournamentId}/{playerId}")

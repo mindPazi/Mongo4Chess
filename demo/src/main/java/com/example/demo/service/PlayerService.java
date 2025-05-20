@@ -140,6 +140,17 @@ public class PlayerService {
         }
     }
 
+    public List<PlayerNode> getFriends(){
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String playerId = authentication.getName();
+            return playerNodeDAO.getFriends(playerId);
+        }catch(Exception e){
+            logger.error("Errore durante il recupero della lista degli amici", e.getMessage(), e);
+            throw new RuntimeException("Errore durante il recupero della lista degli amici");
+        }
+    }
+
     public void removeFriend(String friendId) {
         try {
 

@@ -9,10 +9,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Repository
 public class TournamentDAO {
@@ -52,7 +50,7 @@ public class TournamentDAO {
         return tournaments;
     }
 
-    public List<Tournament> getActiveTournaments(int elo) {
+    public List<Tournament> getAvailableTournaments(int elo) {
         Query query = new Query(Criteria.where("isClosed").is(false).and("eloMin").lte(elo).and("eloMax").gte(elo));
         List<Tournament> tournaments = mongoTemplate.find(query, Tournament.class, "TournamentCollection");
         System.out.println("Active tournaments retrieved successfully");

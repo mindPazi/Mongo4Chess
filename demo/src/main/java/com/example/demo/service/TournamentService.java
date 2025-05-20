@@ -64,7 +64,7 @@ public class TournamentService {
         }
     }
 
-    public List<Tournament> getActiveTournaments() {
+    public List<Tournament> getAvailableTournaments() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -72,7 +72,7 @@ public class TournamentService {
         PlayerNode player = playerNodeDAO.getPlayer(username);
         int playerElo = player.getElo();
 
-        return tournamentDAO.getActiveTournaments(playerElo);
+        return tournamentDAO.getAvailableTournaments(playerElo);
     }
 
 
