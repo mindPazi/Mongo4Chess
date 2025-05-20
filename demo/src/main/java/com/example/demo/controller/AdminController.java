@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-//todo: getTournamentsCreatedBy
 @RestController
 @RequestMapping("/api/admin")
 @Tag(name = "Admin Controller", description = "Admin operations")
