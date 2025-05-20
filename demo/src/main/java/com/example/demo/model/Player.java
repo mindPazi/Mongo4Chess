@@ -14,17 +14,14 @@ public class Player {
     private String id;
     private String username;
     private String password;
-    // todo: nella collection player non c'è l'elo corrente, togliere
-    private int elo;
     private List<PlayerMatch> matches;
     private List<PlayerTournament> tournaments;
     private Boolean isBanned;
 
     // constructor for new players
-    public Player(String username, String password) {// , int elo) {
+    public Player(String username, String password) {
         this.username = username;
         this.password = password;
-        // this.elo = elo;
     }
 
     public Player() {
