@@ -35,11 +35,11 @@ public class MatchDAO {
         // Indici essenziali per le query che effettui più spesso
 
         // Ricerca per giocatore (sia come bianco che nero)
-        matchCollection.createIndex(new Document("white", 1));
-        matchCollection.createIndex(new Document("black", 1));
+        // matchCollection.createIndex(new Document("white", 1));
+        // matchCollection.createIndex(new Document("black", 1));
 
-        // Ricerca per intervallo di date
-        matchCollection.createIndex(new Document("date", 1));
+        // // Ricerca per intervallo di date
+        // matchCollection.createIndex(new Document("date", 1));
 
         // Ricerca/statistiche per Elo
         matchCollection.createIndex(new Document("whiteElo", 1));
