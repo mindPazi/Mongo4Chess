@@ -171,9 +171,9 @@ public class PlayerDAO {
                 .append("password", player.getPassword());
 
         // Aggiungi solo se non è zero
-        if (player.getElo() != 0) {
-            doc.append("elo", player.getElo());
-        }
+        //if (player.getElo() != 0) {
+        //    doc.append("elo", player.getElo());
+        //}
         if (player.getMatches() != null && !player.getMatches().isEmpty()) {
             doc.append("matches", player.getMatches());
         }

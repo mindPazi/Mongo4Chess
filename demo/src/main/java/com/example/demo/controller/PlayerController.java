@@ -240,18 +240,18 @@ public class PlayerController extends CommonPlayerAdminController {
         }
     }
 
-    @Operation(summary="Recupera la lista degli amici")
+    @Operation(summary = "Recupera la lista degli amici")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista degli amici recuperata con successo"),
             @ApiResponse(responseCode = "400", description = "Errore nel recupero")
     })
     @GetMapping("/get_friends")
-    public ResponseEntity<?> getFriends(){
-        try{
+    public ResponseEntity<?> getFriends() {
+        try {
             return ResponseEntity.ok(playerService.getFriends());
-        }catch (Exception e){
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("Errore nel recupero");
+                    .body("Error retrieving the friends.");
         }
     }
 
@@ -269,7 +269,7 @@ public class PlayerController extends CommonPlayerAdminController {
         try {
             // Passa solo friendId al Service
             playerService.addFriend(friendId);
-            return ResponseEntity.ok("Amico aggiunto con successo");
+            return ResponseEntity.ok("Friend added successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Errore durante l'aggiunta dell'amico");

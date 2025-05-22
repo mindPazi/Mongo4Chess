@@ -14,26 +14,26 @@ public class MatchDTO {
     @Past
     private Date date;
 
-    @NotBlank(message = "Il giocatore bianco è obbligatorio")
+    @NotBlank(message = "The white player is mandatory")
     private String white;
 
-    @NotBlank(message = "Il giocatore nero è obbligatorio")
+    @NotBlank(message = "The black player is mandatory")
     private String black;
 
-    @NotBlank(message = "Il risultato è obbligatorio (es:1-0, 1/2-1/2, 0-1)")
+    @NotBlank(message = "The result is mandatory (e.g., 1-0, 1/2-1/2, 0-1)")
     private String result;
 
-    @NotBlank(message = "Il time control è obbligatorio (es: 10, 120)")
+    @NotBlank(message = "The time control is mandatory (e.g., 10, 120)")
     private String timeControl;
 
-    @NotBlank(message = "L'ECO è obbligatorio")
+    @NotBlank(message = "The ECO is mandatory")
     private String eco;
 
-    @NotNull(message = "Il numero di plyCount è obbligatorio")
-    @Positive(message = "Il numero di plyCount deve essere positivo")
+    @NotNull(message = "The number of plyCount is mandatory")
+    @Positive(message = "The number of plyCount must be positive")
     private Integer plyCount;
 
-    @NotBlank(message = "La reason è obbligatoria (es: checkmate, stalemate, draw)")
+    @NotBlank(message = "The reason is mandatory (e.g., checkmate, stalemate, draw)")
     private String reason;
 
     @Null

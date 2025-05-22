@@ -56,8 +56,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/register").anonymous() // Allow anonymous access to /api/register
                         .anyRequest().permitAll()) // All other requests are public
                 .httpBasic(withDefaults());
-
-
         return http.build();
     }
 }

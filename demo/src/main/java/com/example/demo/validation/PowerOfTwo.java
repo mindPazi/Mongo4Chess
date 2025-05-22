@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PowerOfTwo {
-    String message() default "Deve essere una potenza del 2";
+    String message() default "It must be a power of two";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }
