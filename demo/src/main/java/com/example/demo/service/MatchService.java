@@ -54,6 +54,7 @@ public class MatchService {
             deltaElos.set(1, 0);
 
         matchDAO.saveMatch(match);
+        playerNodeDAO.setPlayedEdge(match.getWhite(), match.getBlack());
 
         try {
             switch (match.getResult()) {

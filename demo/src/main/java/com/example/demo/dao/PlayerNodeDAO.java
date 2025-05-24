@@ -31,17 +31,17 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
 
     @Query("USE chessDB " +
            "MATCH (a:PlayerNode {username: $playerId1}), (b:PlayerNode {username: $playerId2}) " +
-           "MERGE (a)-[:FRIENDS_WITH]->(b)")
+           "MERGE (a)-[:FRIEND]->(b)")
     void addFriend(String playerId1, String playerId2);
 
     @Query("USE chessDB " +
-           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode {username: $playerId2}) " +
+           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIEND]->(b:PlayerNode {username: $playerId2}) " +
            "DELETE r " +
            "RETURN COUNT(r)")
     int removeFriend(String playerId1, String playerId2);
 
     @Query("USE chessDB " +
-           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIENDS_WITH]->(b:PlayerNode) " +
+           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIEND]->(b:PlayerNode) " +
            "RETURN b")
     List<PlayerNode> getFriends(String playerId1);
 
@@ -80,4 +80,10 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
            "MATCH (p:PlayerNode {username: $currentUsername}) " +
            "SET p.username = $newUsername")
     void updatePlayerUsername(String currentUsername, String newUsername);
+
+    @Query("USE chessDB " +
+           "MATCH (a:PlayerNode {username: $player1}), (b:PlayerNode {username: $player2}) " +
+           "MERGE (a)-[:PLAYED]->(b) " +
+           "MERGE (b)-[:PLAYED]->(a)")
+    void setPlayedEdge(String player1, String player2);
 }

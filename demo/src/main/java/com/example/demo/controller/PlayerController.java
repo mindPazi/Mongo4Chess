@@ -282,8 +282,8 @@ public class PlayerController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "404", description = "Amico non trovato"),
             @ApiResponse(responseCode = "400", description = "Dati non validi")
     })
-    @DeleteMapping("/remove_friend")
-    public ResponseEntity<?> removeFriend(@RequestParam String friendId) {
+    @DeleteMapping("/remove_friend/{friendId}")
+    public ResponseEntity<?> removeFriend(@PathVariable String friendId) {
         if (friendId == null || friendId.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID amico non valido");
         }
