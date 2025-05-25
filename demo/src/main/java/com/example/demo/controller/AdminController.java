@@ -199,8 +199,14 @@ public class AdminController extends CommonPlayerAdminController {
     @PatchMapping("/tournament/removePlayer/{tournamentId}/{playerId}")
     public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
                                                              @PathVariable String playerId) {
-        return super.removePlayerFromTournament(tournamentId, playerId);
+        try {
+            tournamentService.removePlayer(tournamentId, playerId);
+            return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error removing player: " + e.getMessage());
+        }
     }
+
 
     @Operation(summary = "Add match to tournament", description = "Adds a match to a specific tournament")
     @PatchMapping("/tournament/{tournamentId}/addMatch")

@@ -128,12 +128,10 @@ public class TournamentService {
     }
 
     public void removePlayer(String tournamentId, String playerId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String creator = tournamentDAO.getTournament(tournamentId).getCreator();
-
-        if (!authentication.getName().equals(creator) && !authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")))
-            throw new RuntimeException("Non sei il creatore del torneo");
-
+        // se il torneo è già iniziato non posso rimuovere il giocatore
+        if (new Date().compareTo(tournamentDAO.getTournament(tournamentId).getStartDate()) > 0) {
+            throw new RuntimeException("Tournament has already started, cannot remove player");
+        }
         tournamentDAO.removePlayer(tournamentId, playerId);
         tournamentDAO.openTournament(tournamentId);
         playerDAO.removeTournament(tournamentId, playerId);

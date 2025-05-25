@@ -130,16 +130,6 @@ public abstract class CommonPlayerAdminController {
         }
     }
 
-    public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
-                                                             @PathVariable String playerId) {
-        try {
-            tournamentService.removePlayer(tournamentId, playerId);
-            return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error removing player: " + e.getMessage());
-        }
-    }
-
 
     public ResponseEntity<?> getTournamentsByDate(@PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, @PathVariable @Valid @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
         try {

@@ -170,18 +170,30 @@ public class PlayerController extends CommonPlayerAdminController {
         }
     }
 
+    @Operation(summary = "Un giocatore lascia un torneo")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Il giocatore ha lasciato il torneo"),
+            @ApiResponse(responseCode = "400", description = "Dati non validi"),
+            @ApiResponse(responseCode = "500", description = "Errore interno del server")
+    })
+    @PatchMapping("/tournament/leave/{tournamentId}")
+    public ResponseEntity<String> leaveTournament(@PathVariable String tournamentId) {
+        try{
+            tournamentService.removePlayer(tournamentId, SecurityContextHolder.getContext().getAuthentication().getName());
+            return ResponseEntity.ok("Player left the tournament successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante l'abbandono del torneo: " + e.getMessage());
+        }
+    }
+
     @Operation(summary = "Aggiungi le posizioni ai tornei", description = "Aggiunge le posizioni ai tornei")
     @PatchMapping("/tournament/updatePositions/{tournamentId}")
     public ResponseEntity<String> updatePositions(@PathVariable String tournamentId, @RequestBody @Valid List<TournamentPlayerDTO> tournamentPlayerDTOs) {
         return super.updatePositions(tournamentId, tournamentPlayerDTOs);
     }
 
-    @Operation(summary = "Remove player from tournament", description = "Removes a player from a specific tournament")
-    @PatchMapping("/tournament/removePlayer/{tournamentId}/{playerId}")
-    public ResponseEntity<String> removePlayerFromTournament(@PathVariable String tournamentId,
-                                                             @PathVariable String playerId) {
-        return super.removePlayerFromTournament(tournamentId, playerId);
-    }
 
     @Operation(summary = "Ottieni tutti i tornei")
     @ApiResponses({
