@@ -151,7 +151,7 @@ public class TournamentDAO {
 
     public void openTournament(String tournamentId) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
-        Update update = new Update().set("closed", false);
+        Update update = new Update().set("isClosed", false);
         mongoTemplate.updateFirst(query, update, Tournament.class);
         System.out.println("Tournament opened successfully: " + tournamentId);
     }
