@@ -284,6 +284,7 @@ public class MatchDAO {
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
+    // todo: modificare per il fatto che dal db non c'è più la reason
     private Document createGroupStage(String id) {
         return new Document("$group", new Document("_id", id)
                 .append("wins_checkmated", createSumCondition("win", "checkmated"))
