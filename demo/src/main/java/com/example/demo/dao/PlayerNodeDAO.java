@@ -83,7 +83,6 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
 
     @Query("USE chessDB " +
            "MATCH (a:PlayerNode {username: $player1}), (b:PlayerNode {username: $player2}) " +
-           "MERGE (a)-[:PLAYED]->(b) " +
-           "MERGE (b)-[:PLAYED]->(a)")
+           "MERGE (a)-[:PLAYED]-(b) ")
     void setPlayedEdge(String player1, String player2);
 }
