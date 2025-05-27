@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.dao.TournamentDAO;
 import com.example.demo.dao.PlayerDAO;
 
@@ -30,7 +32,8 @@ public class TournamentService {
     private final MatchDAO matchDAO;
 
     @Autowired
-    public TournamentService(MatchDAO matchDAO, TournamentDAO tournamentDAO, PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO) {
+    public TournamentService(MatchDAO matchDAO, TournamentDAO tournamentDAO, PlayerDAO playerDAO,
+            PlayerNodeDAO playerNodeDAO) {
         this.tournamentDAO = tournamentDAO;
         this.playerDAO = playerDAO;
         this.playerNodeDAO = playerNodeDAO;
@@ -45,7 +48,8 @@ public class TournamentService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         // se non sei il creatore e non sei un admin non puoi eliminare un torneo
-        if (!Objects.equals(authentication.getName(), tournamentDAO.getTournament(tournamentId).getCreator()) && authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+        if (!Objects.equals(authentication.getName(), tournamentDAO.getTournament(tournamentId).getCreator())
+                && authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             throw new RuntimeException("Non sei il creatore del torneo o non hai i privilegi amministratore.");
         }
         tournamentDAO.deleteTournament(tournamentId);
@@ -53,7 +57,6 @@ public class TournamentService {
             playerDAO.removeTournament(tournamentId, player.getUsername());
         }
     }
-
 
     public List<Tournament> getAllTournaments() {
         try {
@@ -75,7 +78,6 @@ public class TournamentService {
         return tournamentDAO.getAvailableTournaments(playerElo);
     }
 
-
     public void joinTournament(String tournamentId) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -88,7 +90,6 @@ public class TournamentService {
         return tournamentDAO.getCreatedTournaments(creator);
     }
 
-
     // used by admin
     public void addPlayerByAdmin(String tournamentId, String playerId) throws RuntimeException {
         if (playerDAO.getPlayer(playerId) == null) {
@@ -100,7 +101,8 @@ public class TournamentService {
         logger.info("Giocatore {} aggiunto con successo al torneo {}", playerId, tournamentId);
     }
 
-    private void addPlayerToTournament(String tournamentId, String playerId) {
+    @Transactional
+    public void addPlayerToTournament(String tournamentId, String playerId) {
         PlayerNode playerNode = playerNodeDAO.getPlayerById(playerId);
         Tournament tournament = tournamentDAO.getTournament(tournamentId);
 
@@ -120,13 +122,15 @@ public class TournamentService {
 
         TournamentPlayer playerEntry = new TournamentPlayer(playerId, 0);
         tournamentDAO.addPlayer(tournamentId, playerEntry);
-        playerDAO.addTournament(playerId, new PlayerTournament(tournamentId, tournament.getName(), tournament.getStartDate(), tournament.getEndDate(), 0));
+        playerDAO.addTournament(playerId, new PlayerTournament(tournamentId, tournament.getName(),
+                tournament.getStartDate(), tournament.getEndDate(), 0));
 
         if (tournament.getPlayers().size() + 1 == tournament.getMaxPlayers()) {
             tournamentDAO.closeTournament(tournamentId);
         }
     }
 
+    @Transactional
     public void removePlayer(String tournamentId, String playerId) {
         // se il torneo è già iniziato non posso rimuovere il giocatore
         if (new Date().compareTo(tournamentDAO.getTournament(tournamentId).getStartDate()) > 0) {
@@ -155,10 +159,12 @@ public class TournamentService {
         logger.info("Posizioni aggiornate con successo per il torneo {}", tournamentId);
     }
 
-    // le partite fatte nei tornei non incidono sullo storico elo dei giocatori, nè vengono automaticamente inserite nella collection di matches
+    // le partite fatte nei tornei non incidono sullo storico elo dei giocatori, nè
+    // vengono automaticamente inserite nella collection di matches
     public void addMostImportantMatches(String tournamentId, List<TournamentMatch> matches) {
         try {
-            //aggiorna l'elo del bianco e del nero prima della partita e poi aggiunge la partita
+            // aggiorna l'elo del bianco e del nero prima della partita e poi aggiunge la
+            // partita
             for (TournamentMatch tm : matches) {
                 PlayerNode white = playerNodeDAO.getPlayer(tm.getMatch().getWhite());
                 PlayerNode black = playerNodeDAO.getPlayer(tm.getMatch().getBlack());
@@ -166,7 +172,7 @@ public class TournamentService {
                 tm.getMatch().setBlackElo(black.getElo());
             }
             tournamentDAO.addMatchToTournament(tournamentId, matches);
-            //matchDAO.addMatches(matches.stream().map(TournamentMatch::getMatch).collect(Collectors.toList()));
+            // matchDAO.addMatches(matches.stream().map(TournamentMatch::getMatch).collect(Collectors.toList()));
             logger.info("Partite aggiunte con successo al torneo {}", tournamentId);
         } catch (Exception e) {
             logger.error("Errore durante l'aggiunta delle partite al torneo {}", tournamentId, e);

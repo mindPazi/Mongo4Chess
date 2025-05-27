@@ -16,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class PlayerService {
 
@@ -53,23 +55,23 @@ public class PlayerService {
         }
     }
 
-    public void deletePlayer(String playerUsername) throws RuntimeException {
+    @Transactional
+    public void deletePlayer(String playerUsername) {
+        // backup in caso di rollback manuale su Neo4j
         Player mongoPlayerBackup = playerDAO.getPlayer(playerUsername);
 
+        // se playerDAO.deletePlayer lancia RuntimeException, Spring fa rollback
+        // automatico
+        playerDAO.deletePlayer(playerUsername);
+
         try {
-            playerDAO.deletePlayer(playerUsername);
-
-            try {
-                playerNodeDAO.deletePlayer(playerUsername);
-            } catch (Exception neo4jEx) {
-                if (mongoPlayerBackup != null) {
-                    playerDAO.rollbackPlayer(mongoPlayerBackup);
-                }
-                throw new RuntimeException("Errore cancellando da Neo4j, rollback su Mongo eseguito!", neo4jEx);
+            playerNodeDAO.deletePlayer(playerUsername);
+        } catch (Exception neo4jEx) {
+            // qui vogliamo comunque cancellare la rollback su Mongo
+            if (mongoPlayerBackup != null) {
+                playerDAO.rollbackPlayer(mongoPlayerBackup);
             }
-
-        } catch (Exception mongoEx) {
-            throw new RuntimeException("Errore cancellando da MongoDB!", mongoEx);
+            throw new RuntimeException("Errore cancellando da Neo4j, rollback su Mongo eseguito!", neo4jEx);
         }
     }
 
@@ -140,12 +142,12 @@ public class PlayerService {
         }
     }
 
-    public List<PlayerNode> getFriends(){
+    public List<PlayerNode> getFriends() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String playerId = authentication.getName();
             return playerNodeDAO.getFriends(playerId);
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error("Errore durante il recupero della lista degli amici", e.getMessage(), e);
             throw new RuntimeException("Errore durante il recupero della lista degli amici");
         }
@@ -168,23 +170,22 @@ public class PlayerService {
         }
     }
 
+    @Transactional // rollback automatico su Mongo in caso di eccezioni
     public String createPlayer(String username, String password, int elo) {
-        try {
-            if (playerDAO.getPlayer(username) == null) {
-                playerDAO.createPlayer(username, password);
-                try {
-                    playerNodeDAO.createPlayer(username, elo);
-                    return "Giocatore creato con successo";
-                } catch (Exception neo4jEx) {
-                    playerDAO.deletePlayer(username); // rollback Mongo
-                    throw new RuntimeException("Errore creando in Neo4j, rollback Mongo eseguito!", neo4jEx);
-                }
-            } else {
-                return "Giocatore già esistente";
+        // se getPlayer o createPlayer lanciassero eccezione, Spring rollbacka
+        // automaticamente
+        if (playerDAO.getPlayer(username) == null) {
+            playerDAO.createPlayer(username, password);
+            try {
+                playerNodeDAO.createPlayer(username, elo);
+                return "Giocatore creato con successo";
+            } catch (Exception neo4jEx) {
+                // rollback esplicito su Mongo in caso di fallimento Neo4j
+                playerDAO.deletePlayer(username);
+                throw new RuntimeException("Errore creando in Neo4j, rollback Mongo eseguito!", neo4jEx);
             }
-        } catch (Exception e) {
-            logger.error("Errore durante la creazione del giocatore {}", username, e);
-            throw new RuntimeException("Errore nella creazione del giocatore " + username);
+        } else {
+            return "Giocatore già esistente";
         }
     }
 
