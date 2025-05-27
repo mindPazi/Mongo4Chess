@@ -135,6 +135,9 @@ public class PlayerService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String playerId = authentication.getName();
 
+            if(playerNodeDAO.getPlayerById(friendId)==null)
+                throw new RuntimeException("Player not found"+ friendId);
+
             playerNodeDAO.addFriend(playerId, friendId);
         } catch (Exception e) {
             logger.error("Errore durante l'aggiunta dell'amico {} per il giocatore {}", friendId, e.getMessage(), e);
