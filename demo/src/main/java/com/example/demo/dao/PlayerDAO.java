@@ -1,10 +1,15 @@
 package com.example.demo.dao;
 
 import com.example.demo.model.*;
+import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -14,8 +19,10 @@ import java.util.Date;
 @Repository
 public class PlayerDAO {
     private final MongoCollection<Document> playerCollection;
+    private final MongoTemplate mongoTemplate;
 
-    public PlayerDAO(MongoClient mongoclient) {
+    public PlayerDAO(MongoClient mongoclient, MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
         MongoDatabase mongodatabase = mongoclient.getDatabase("chessDB");
         this.playerCollection = mongodatabase.getCollection("PlayerCollection");
         // Indice unico su username
@@ -188,5 +195,19 @@ public class PlayerDAO {
                 new Document("username", player.getUsername()),
                 doc,
                 new com.mongodb.client.model.ReplaceOptions().upsert(true));
+    }
+
+    public void addMatch(String player, PlayerMatch playerMatch) {
+        Query query = new Query(Criteria.where("username").is(player));
+        Update update = new Update().push("matches", playerMatch);
+        mongoTemplate.updateFirst(query, update, "PlayerCollection");
+    }
+
+    public void removeMatch(String player, Date date, int elo) {
+        // Rimuove il match dalla lista dei match del giocatore
+        playerCollection.updateOne(
+                new Document("username", player),
+                new Document("$pull", new Document("matches", new Document("date", date).append("elo", elo)))
+        );
     }
 }

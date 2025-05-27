@@ -48,28 +48,7 @@ public class MatchDAO {
     }
 
     public void saveMatch(Match match) {
-        // Document matchDocument = Document.parse(match.toJson());
-        // matchCollection.insertOne(matchDocument);
         mongoTemplate.save(match, "MatchCollection");
-        PlayerMatch whitePlayerMatch = new PlayerMatch(match.getWhiteElo(), match.getDate());
-        PlayerMatch blackPlayerMatch = new PlayerMatch(match.getBlackElo(), match.getDate());
-
-        mongoTemplate.updateFirst(
-                new Query(Criteria.where("username").is(match.getWhite())),
-                new Update().push("matches", whitePlayerMatch),
-                "PlayerCollection");
-
-        mongoTemplate.updateFirst(
-                new Query(Criteria.where("username").is(match.getBlack())),
-                new Update().push("matches", blackPlayerMatch),
-                "PlayerCollection");
-
-        // playerCollection.updateOne(new Document("username", match.getWhite()),
-        // new Document("$push", new Document("matches",
-        // convertMatchToDocumentForPlayer(match, match.getWhite()))));
-        // playerCollection.updateOne(new Document("username", match.getBlack()),
-        // new Document("$push", new Document("matches",
-        // convertMatchToDocumentForPlayer(match, match.getBlack()))));
     }
 
     private Document convertMatchToDocumentForPlayer(Match match, String username) {

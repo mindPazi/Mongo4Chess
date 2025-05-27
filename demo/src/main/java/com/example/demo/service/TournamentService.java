@@ -29,21 +29,20 @@ public class TournamentService {
     private final TournamentDAO tournamentDAO;
     private final PlayerDAO playerDAO;
     private final PlayerNodeDAO playerNodeDAO;
-    private final MatchDAO matchDAO;
 
     @Autowired
-    public TournamentService(MatchDAO matchDAO, TournamentDAO tournamentDAO, PlayerDAO playerDAO,
+    public TournamentService(TournamentDAO tournamentDAO, PlayerDAO playerDAO,
             PlayerNodeDAO playerNodeDAO) {
         this.tournamentDAO = tournamentDAO;
         this.playerDAO = playerDAO;
         this.playerNodeDAO = playerNodeDAO;
-        this.matchDAO = matchDAO;
     }
 
     public Tournament createTournament(Tournament tournament) throws RuntimeException {
         return tournamentDAO.createTournament(tournament);
     }
 
+    @Transactional
     public void deleteTournament(String tournamentId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -78,6 +77,7 @@ public class TournamentService {
         return tournamentDAO.getAvailableTournaments(playerElo);
     }
 
+    @Transactional
     public void joinTournament(String tournamentId) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -91,6 +91,7 @@ public class TournamentService {
     }
 
     // used by admin
+    @Transactional
     public void addPlayerByAdmin(String tournamentId, String playerId) throws RuntimeException {
         if (playerDAO.getPlayer(playerId) == null) {
             throw new RuntimeException("Player not found");
@@ -101,7 +102,7 @@ public class TournamentService {
         logger.info("Giocatore {} aggiunto con successo al torneo {}", playerId, tournamentId);
     }
 
-    @Transactional
+    // l'annotazione @Transactional è nelle funzioni chiamanti, se si mette anche qui si rompe
     public void addPlayerToTournament(String tournamentId, String playerId) {
         PlayerNode playerNode = playerNodeDAO.getPlayerById(playerId);
         Tournament tournament = tournamentDAO.getTournament(tournamentId);
@@ -143,6 +144,7 @@ public class TournamentService {
         logger.info("Giocatore {} rimosso con successo dal torneo {}", playerId, tournamentId);
     }
 
+    @Transactional
     public void updatePositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
         Tournament tournament = tournamentDAO.getTournament(tournamentId);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -172,7 +174,6 @@ public class TournamentService {
                 tm.getMatch().setBlackElo(black.getElo());
             }
             tournamentDAO.addMatchToTournament(tournamentId, matches);
-            // matchDAO.addMatches(matches.stream().map(TournamentMatch::getMatch).collect(Collectors.toList()));
             logger.info("Partite aggiunte con successo al torneo {}", tournamentId);
         } catch (Exception e) {
             logger.error("Errore durante l'aggiunta delle partite al torneo {}", tournamentId, e);

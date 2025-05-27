@@ -5,10 +5,12 @@ import com.example.demo.dao.PlayerDAO;
 import com.example.demo.dao.PlayerNodeDAO;
 import com.example.demo.dao.TournamentDAO;
 import com.example.demo.model.*;
+import com.mongodb.MongoException;
 import lombok.Setter;
 
 import java.util.List;
 
+import org.neo4j.driver.exceptions.Neo4jException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -66,7 +68,7 @@ public class PlayerService {
 
         try {
             playerNodeDAO.deletePlayer(playerUsername);
-        } catch (Exception neo4jEx) {
+        } catch (Neo4jException neo4jEx) {
             // qui vogliamo comunque cancellare la rollback su Mongo
             if (mongoPlayerBackup != null) {
                 playerDAO.rollbackPlayer(mongoPlayerBackup);
@@ -98,15 +100,25 @@ public class PlayerService {
         }
     }
 
+    @Transactional  // serve a mongo
     public void updatePlayerUsername(String newUsername) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
         try {
+            playerNodeDAO.updatePlayerUsername(currentUsername, newUsername);
             playerDAO.updatePlayerUsername(currentUsername, newUsername);
             matchDAO.updatePlayerUsernameInMatches(currentUsername, newUsername);
             tournamentDAO.updatePlayerUsernameInTournaments(currentUsername, newUsername);
-            playerNodeDAO.updatePlayerUsername(currentUsername, newUsername);
+        } catch (Neo4jException neo4jException) {
+            // così se lancia eccezione sia neo4j che mongo, esco subito senza tentare di fare rollback su neo4j
+            logger.error("Errore durante l'aggiornamento del nome utente in Neo4j da {} a {}", currentUsername, newUsername, neo4jException);
+            throw new RuntimeException("Errore nell'aggiornare il nome utente in Neo4j da " + currentUsername + " a " + newUsername, neo4jException);
+        } catch (MongoException mongoException) {
+            // Rollback automatico su neo4j in caso di errore MongoDB
+            playerNodeDAO.updatePlayerUsername(newUsername, currentUsername);
+            logger.error("Errore durante l'aggiornamento del nome utente in Mongo, rollback Neo4j eseguito!", mongoException);
+            throw new RuntimeException("Errore nell'aggiornare il nome utente in MongoDB, rollback Neo4j eseguito!", mongoException);
         } catch (Exception e) {
             logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", currentUsername, newUsername,
                     e);
@@ -173,10 +185,8 @@ public class PlayerService {
         }
     }
 
-    @Transactional // rollback automatico su Mongo in caso di eccezioni
+    //@Transactional non serve, su mongo c'è l'inserimento di un elemento su una sola collection
     public String createPlayer(String username, String password, int elo) {
-        // se getPlayer o createPlayer lanciassero eccezione, Spring rollbacka
-        // automaticamente
         if (playerDAO.getPlayer(username) == null) {
             playerDAO.createPlayer(username, password);
             try {
