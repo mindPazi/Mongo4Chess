@@ -87,7 +87,7 @@ public class MatchService {
         logger.info("Match salvato con successo in MongoDB e Neo4j.");
     }
 
-    @Transactional("mongoTransactionManager") // Questa transazione garantisce l'atomicità delle operazioni MongoDB
+    @Transactional//("mongoTransactionManager") // Questa transazione garantisce l'atomicità delle operazioni MongoDB
     protected void persistMatchInMongo(Match match) {
         // 4) persistenza in MongoDB
         matchDAO.saveMatch(match); // Salva il documento Match
@@ -130,7 +130,7 @@ public class MatchService {
 
 
     // Metodo di compensazione per MongoDB
-    @Transactional("mongoTransactionManager") // Questa transazione garantisce l'atomicità del rollback su MongoDB
+    @Transactional//("mongoTransactionManager") // Questa transazione garantisce l'atomicità del rollback su MongoDB
     protected void compensateMongoMatchSave(Match match) {
         logger.warn("Avvio compensazione per MongoDB per match ID: {}", match.getId());
         try {

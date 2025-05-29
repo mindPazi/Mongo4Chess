@@ -159,7 +159,7 @@ public class MatchDAO {
                                 new Document("$divide",
                                         Arrays.asList("$wins", "$total")))),
                 new Document("$sort", new Document("winRate", -1)),
-                new Document("$limit", 1)));
+                new Document("$limit", 5)));
 
         return results.first();
     }
@@ -263,9 +263,7 @@ public class MatchDAO {
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
-    // todo: modificare per il fatto che dal db non c'è più la reason.
-    //  Il senso dell'aggregazione non c'è più (manca il group stage) quindi
-    //  pensare ad un'altra
+
     private Document createGroupStage(String id) {
         return new Document("$group", new Document("_id", id)
                 .append("wins_checkmated", createSumCondition("win", "checkmated"))
@@ -323,7 +321,6 @@ public class MatchDAO {
         List<Document> resultList = new ArrayList<>();
         results.into(resultList);
         return resultList;
-        // return matchDAO.executeAggregation(Arrays.asList(facetStage));
     }
 
 }
