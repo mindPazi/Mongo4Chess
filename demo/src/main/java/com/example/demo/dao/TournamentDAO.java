@@ -57,61 +57,6 @@ public class TournamentDAO {
         return tournaments;
     }
 
-//    public void addMostImportantMatches(List<Match> matches, String tournamentId) {
-//        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
-//        if (tournament != null) {
-//            tournament.setMatches(matches);
-//            mongoTemplate.save(tournament);
-//            System.out.println("Most important matches added successfully to tournament: " + tournamentId);
-//        } else {
-//            System.out.println("Tournament not found: " + tournamentId);
-//        }
-//    }
-
-    public void joinTournament(String tournamentId, TournamentPlayer player) {
-        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
-        if (tournament != null) {
-            tournament.addPlayer(player);
-            mongoTemplate.save(tournament);
-            System.out.println(
-                    "Player joined tournament successfully: " + player.getUsername() + " to tournament: " + tournamentId);
-        } else {
-            System.out.println("Tournament not found: " + tournamentId);
-        }
-    }
-
-//    public void deletePlayerFromTournament(String tournamentId, String playerUsername) {
-//        Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class);
-//        if (tournament != null) {
-//            tournament.removePlayer(playerUsername);
-//            mongoTemplate.save(tournament);
-//            System.out.println("Player removed from tournament successfully: " + playerUsername + " from tournament: "
-//                    + tournamentId);
-//        } else {
-//            System.out.println("Tournament not found: " + tournamentId);
-//        }
-//    }
-
-    public List<Tournament> getCreatedTournaments(String creator) {
-        Query query = new Query(Criteria.where("creator").is(creator));
-        return mongoTemplate.find(query, Tournament.class, "TournamentCollection");
-
-//        StringBuilder createdTournaments = new StringBuilder();
-//        for (Tournament tournament : tournaments) {
-//            if (tournament.getCreator().equals(creator)) {
-//                createdTournaments.append(tournament.toString());
-//            }
-//        }
-//        return createdTournaments.toString();
-    }
-
-    public void addMatch(String tournamentId, Match match) {
-        Query query = new Query(Criteria.where("id").is(tournamentId));
-        Update update = new Update().push("matches", match);
-        mongoTemplate.updateFirst(query, update, Tournament.class);
-        System.out.println("Match aggiunto con successo al torneo: " + tournamentId);
-    }
-
     // Aggiunge un giocatore al torneo
     public void addPlayer(String tournamentId, TournamentPlayer player) {
         Query query = new Query(Criteria.where("id").is(tournamentId));

@@ -86,9 +86,6 @@ public class TournamentService {
         addPlayerToTournament(tournamentId, playerUsername);
     }
 
-    public List<Tournament> getCreatedTournaments(String creator) {
-        return tournamentDAO.getCreatedTournaments(creator);
-    }
 
     // used by admin
     @Transactional
