@@ -23,7 +23,7 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
            "a.blackWins = a.blackWins + $blackWins, a.whiteDraws = a.whiteDraws + $whiteDraws, " +
            "a.blackDraws = a.blackDraws + $blackDraws, a.whiteLosses = a.whiteLosses + $whiteLosses, " +
            "a.blackLosses = a.blackLosses + $blackLosses")
-    void updatePlayerStats(@Param("username") String username, @Param("elo") int elo,
+    void updatePlayerStats(@Param("usernayme") String username, @Param("elo") int elo,
                            @Param("whiteWins") int whiteWins, @Param("blackWins") int blackWins,
                            @Param("whiteDraws") int whiteDraws, @Param("blackDraws") int blackDraws,
                            @Param("whiteLosses") int whiteLosses, @Param("blackLosses") int blackLosses);
