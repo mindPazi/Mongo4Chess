@@ -139,4 +139,11 @@ public abstract class CommonPlayerAdminController {
         }
     }
 
+    public ResponseEntity<?> getCreatedTournaments(@PathVariable String creator) {
+        try {
+            return ResponseEntity.ok(tournamentService.getCreatedTournaments(creator));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante il recupero dei tornei: " + e.getMessage());
+        }
+    }
 }

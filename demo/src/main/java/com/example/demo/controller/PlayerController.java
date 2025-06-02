@@ -228,6 +228,14 @@ public class PlayerController extends CommonPlayerAdminController {
         return super.getTournamentsByDate(startDate, endDate);
     }
 
+    @Operation(summary = "Ottieni i tornei creati da un giocatore")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Elenco tornei creati ottenuto con successo")
+    })
+    @GetMapping("/tournament/created/{creator}")
+    public ResponseEntity<?> getCreatedTournaments(@PathVariable String creator) {
+        return super.getCreatedTournaments(creator);
+    }
 
     @Operation(summary = "Ottieni l'andamento dell'ELO di un giocatore")
     @ApiResponses({

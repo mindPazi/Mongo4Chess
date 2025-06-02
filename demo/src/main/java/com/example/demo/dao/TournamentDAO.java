@@ -2,7 +2,11 @@ package com.example.demo.dao;
 
 import com.example.demo.model.*;
 import com.mongodb.BasicDBObject;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.UpdateResult;
+import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -16,8 +20,12 @@ import java.util.List;
 public class TournamentDAO {
     private final MongoTemplate mongoTemplate;
 
-    public TournamentDAO(MongoTemplate mongoTemplate) {
+    public TournamentDAO(MongoTemplate mongoTemplate, MongoClient mongoClient) {
         this.mongoTemplate = mongoTemplate;
+        MongoDatabase database = mongoClient.getDatabase("chessDB");
+
+        // serve per la query getTournamentByCreator
+        database.getCollection("TournamentCollection").createIndex(new Document("creator", 1));
     }
 
     // Metodo per creare e salvare un torneo
@@ -56,6 +64,13 @@ public class TournamentDAO {
         System.out.println("Active tournaments retrieved successfully");
         return tournaments;
     }
+
+
+    public List<Tournament> getCreatedTournaments(String creator) {
+        Query query = new Query(Criteria.where("creator").is(creator));
+        return mongoTemplate.find(query, Tournament.class, "TournamentCollection");
+    }
+
 
     // Aggiunge un giocatore al torneo
     public void addPlayer(String tournamentId, TournamentPlayer player) {
