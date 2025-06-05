@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import com.example.demo.dao.AdminDAO;
 import com.example.demo.dao.TournamentDAO;
-import com.example.demo.model.Match;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.example.demo.model.Admin;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminService {
@@ -21,78 +21,58 @@ public class AdminService {
     private final AdminDAO adminDAO;
     private final PlayerService playerService;
     private final TournamentDAO tournamentDAO;
-    private final MatchService matchService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Autowired
     public AdminService(AdminDAO adminDAO, TournamentDAO tournamentDAO,
-            PlayerService playerService, MatchService matchService) {
+                        PlayerService playerService) {
         this.adminDAO = adminDAO;
         this.playerService = playerService;
-        this.matchService = matchService;
         this.tournamentDAO = tournamentDAO;
     }
 
     public void updateAdminPassword(String oldPassword, String newPassword) {
         String currentUsername = null;
         try {
-            // Recupera l'admin autenticato
+            // Get the admin
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             currentUsername = authentication.getName();
 
-            // Recupera l'admin dal DB
+            // Get the admin from the DB
             Admin admin = adminDAO.getAdmin(currentUsername);
 
             if (admin == null) {
-                throw new IllegalArgumentException("Admin non trovato.");
+                throw new IllegalArgumentException("Admin not found.");
             }
 
-            // Verifica la vecchia password
+            // Verify the old password
             if (!encoder.matches(oldPassword, admin.getPassword())) {
-                throw new IllegalArgumentException("La vecchia password non è corretta.");
+                throw new IllegalArgumentException("The old password is incorrect.");
             }
 
-            // Codifica la nuova password
+            // Codify the new password
             String hashedNewPassword = encoder.encode(newPassword);
 
-            // Aggiorna la password nel DB
+            // Update the password in the DB
             adminDAO.updateAdminPassword(currentUsername, hashedNewPassword);
 
-        } catch (IllegalArgumentException e) {
-            throw e;
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiornamento della password per l'admin: {}", e.getMessage(), e);
-            throw new RuntimeException("Errore nell'aggiornare la password per l'admin.");
+            logger.error("Error updating the password for the admin: {}", e.getMessage(), e);
+            throw new RuntimeException("Error updating the password.");
         }
     }
 
+    @Transactional
     public void updateAdminUsername(String newUsername) {
-        // Recupera il nome utente dell'admin autenticato
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
         try {
             adminDAO.updateAdminUsername(currentUsername, newUsername);
             tournamentDAO.updateCreator(currentUsername, newUsername);
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", currentUsername, newUsername, e);
+            logger.error("Error updating the username from {} to {}", currentUsername, newUsername, e);
             throw new RuntimeException(
-                    "Errore nell'aggiornare il nome utente da " + currentUsername + " a " + newUsername);
+                    "Error updating the username from " + currentUsername + " to " + newUsername);
         }
-    }
-
-    public void deletePlayer(String player) {
-        playerService.deletePlayer(player);
-    }
-
-    /*public void saveMatch(Match match) {
-        matchService.saveMatch(match);
-    }*/
-
-    public void banPlayer(String player) {
-        playerService.banPlayer(player);
-    }
-
-    public void unBanPlayer(String player) {
-        playerService.unBanPlayer(player);
     }
 }

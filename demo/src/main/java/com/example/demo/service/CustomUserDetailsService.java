@@ -35,12 +35,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Player player = playerDAO.getPlayer(username);
-        //PlayerNode playerNode = playerNodeDAO.getPlayerNode(username);
         if (player != null) {
             if(player.getIsBanned())
                 throw new UsernameNotFoundException("You are banned");
-            //playerService.setPlayer(player);
-            //playerService.setPlayerNode(playerNode);
             return User.builder()
                     .username(player.getUsername())
                     .password(player.getPassword())

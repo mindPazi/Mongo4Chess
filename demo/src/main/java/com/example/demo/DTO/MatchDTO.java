@@ -36,7 +36,6 @@ public class MatchDTO {
     @NotBlank(message = "The reason is mandatory (e.g., checkmate, stalemate, draw)")
     private String reason;
 
-    @Null
     private List<String> moves;
 
 }

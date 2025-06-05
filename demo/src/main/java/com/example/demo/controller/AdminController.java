@@ -1,11 +1,9 @@
 package com.example.demo.controller;
 
 import com.example.demo.DTO.*;
-import com.example.demo.model.TournamentMatch;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Past;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +16,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
-import com.example.demo.model.Match;
-import com.example.demo.model.Tournament;
 import com.example.demo.service.AdminService;
 import com.example.demo.service.TournamentService;
 
-
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -84,14 +78,14 @@ public class AdminController extends CommonPlayerAdminController {
     public ResponseEntity<?> updateAdminUsername(@PathVariable String newUsername) {
         if (newUsername == null || newUsername.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Dati non validi per l'aggiornamento dello username");
+                    .body("Invalid data for the player's username update.");
         }
         try {
             adminService.updateAdminUsername(newUsername);
-            return ResponseEntity.ok("Username aggiornato con successo");
+            return ResponseEntity.ok("Username updated successfuly");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante l'aggiornamento dello username");
+                    .body(e.getMessage());
         }
     }
 
@@ -106,10 +100,10 @@ public class AdminController extends CommonPlayerAdminController {
             String oldPassword = updatePasswordDTO.getOldPassword();
             String newPassword = updatePasswordDTO.getNewPassword();
             adminService.updateAdminPassword(oldPassword, newPassword);
-            return ResponseEntity.ok("Password aggiornata con successo");
+            return ResponseEntity.ok("Password updated successfuly.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante l'aggiornamento della password");
+                    .body(e.getMessage());
         }
     }
 
@@ -122,23 +116,34 @@ public class AdminController extends CommonPlayerAdminController {
     @Operation(summary = "Delete all matches", description = "Deletes all matches from the database")
     @DeleteMapping("/matches")
     public ResponseEntity<String> deleteAllMatches() {
-        matchService.deleteAllMatches();
-        return ResponseEntity.ok("All matches deleted!");
+        try {
+            matchService.deleteAllMatches();
+            return ResponseEntity.ok("All matches deleted!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
-    // i match vengono eliminati solo dalla collection dei match, rimangono nei player per tenere la statistica dell'andamento dell'elo
     @Operation(summary = "Delete matches before a date", description = "Deletes all matches played before a specific date")
     @DeleteMapping("/matches/before/{date}")
     public ResponseEntity<String> deleteMatchesBeforeDate(@PathVariable @Valid @Past @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date date) {
-        matchService.deleteMatchesBeforeDate(date);
-        return ResponseEntity.ok("All matches before " + date + " deleted!");
+        try {
+            matchService.deleteMatchesBeforeDate(date);
+            return ResponseEntity.ok("All matches before " + date + " deleted!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Delete matches by player", description = "Deletes all matches played by a specific player")
     @DeleteMapping("/matches/player/{username}")
     public ResponseEntity<String> deleteAllMatchesByPlayer(@PathVariable String username) {
-        matchService.deleteAllMatchesByPlayer(username);
-        return ResponseEntity.ok("All matches for player " + username + " deleted!");
+        try {
+            matchService.deleteAllMatchesByPlayer(username);
+            return ResponseEntity.ok("All matches for player " + username + " deleted!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Crea un nuovo torneo")
@@ -148,10 +153,14 @@ public class AdminController extends CommonPlayerAdminController {
     })
     @PostMapping("/tournament/create")
     public ResponseEntity<?> createTournament(@RequestBody @Valid TournamentDTO tournamentDTO) {
-        return super.createTournament(tournamentDTO);
+        try {
+            return super.createTournament(tournamentDTO);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
-    //un admin può eliminare qualsiasi torneo
+    // an admin can delete any tournament
     @Operation(summary = "Elimina un torneo")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Torneo eliminato con successo"),
@@ -179,8 +188,8 @@ public class AdminController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "200", description = "Elenco tornei creati ottenuto con successo")
     })
     @GetMapping("/tournament/created/{creator}")
-    public ResponseEntity<?> getCreatedTournaments(@PathVariable String creator) {
-        return super.getCreatedTournaments(creator);
+    public ResponseEntity<?> getTournamentsByCreator(@PathVariable String creator) {
+        return super.getTournamentsByCreator(creator);
     }
 
     @Operation(summary = "Add player to tournament", description = "Adds a player to a specific tournament")
@@ -191,7 +200,7 @@ public class AdminController extends CommonPlayerAdminController {
             tournamentService.addPlayerByAdmin(tournamentId, playerId);
             return ResponseEntity.ok("Player " + playerId + " added to tournament " + tournamentId);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error adding player: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -203,7 +212,7 @@ public class AdminController extends CommonPlayerAdminController {
             tournamentService.removePlayer(tournamentId, playerId);
             return ResponseEntity.ok("Player " + playerId + " removed from tournament " + tournamentId);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error removing player: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

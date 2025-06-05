@@ -32,7 +32,7 @@ public class Match {
     private String reason;
     private List<String> moves;
 
-    // Costruttore completo
+    // complete constructor
     public Match(String id, Date date, String white, String black, String result,
             int whiteElo, int blackElo, String timeControl, String eco,
             int plyCount, String reason, List<String> moves) {

@@ -13,7 +13,7 @@ import java.util.UUID;
 public class PlayerNode {
 
     @Id
-    @GeneratedValue // Neo4j genererà automaticamente l'ID
+    @GeneratedValue // Neo4j generates the UUID automatically
     private UUID id;
 
     @Property("username")
@@ -32,11 +32,8 @@ public class PlayerNode {
     private int whiteLosses;
     @Property("blackLosses")
     private int blackLosses;
-    //is banned è già salvato in mongo
-//    @Property("isBanned")
-//    private boolean isBanned;
 
-    // Costruttore senza parametri (necessario per Spring Data Neo4j)
+    // Costructor without parameters
     public PlayerNode() {
     }
 
@@ -50,7 +47,6 @@ public class PlayerNode {
         this.blackDraws = 0;
         this.whiteLosses = 0;
         this.blackLosses = 0;
-        //this.isBanned = false;
     }
 
     @Override
@@ -65,7 +61,6 @@ public class PlayerNode {
                ", blackDraws=" + blackDraws +
                ", whiteLosses=" + whiteLosses +
                ", blackLosses=" + blackLosses +
-//                                ", isBanned=" + isBanned +
                '}';
     }
 }

@@ -12,9 +12,6 @@ import com.example.demo.service.AdminService;
 import com.example.demo.service.MatchService;
 import com.example.demo.service.PlayerService;
 import com.example.demo.service.TournamentService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -23,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -38,7 +34,7 @@ public abstract class CommonPlayerAdminController {
     protected final AdminService adminService;
     protected final TournamentService tournamentService;
 
-    //aggiorna le posizioni finali dei giocatori al torneo, aggiornando anche il campo winner
+    // update the final positions, including the winner field
     public ResponseEntity<String> updatePositions(@PathVariable String tournamentId, @RequestBody @Valid List<TournamentPlayerDTO> tournamentPlayerDTOs) {
         try {
             List<TournamentPlayer> tournamentPlayers = new ArrayList<>();
@@ -50,7 +46,7 @@ public abstract class CommonPlayerAdminController {
             tournamentService.updatePositions(tournamentPlayers, tournamentId);
             return ResponseEntity.ok("Positions updated!");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error updating positions: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -59,9 +55,8 @@ public abstract class CommonPlayerAdminController {
             Match match = new Match();
             BeanUtils.copyProperties(matchDTO, match);
             matchService.saveMatch(match);
-            return ResponseEntity.status(HttpStatus.CREATED).body(match); // Restituisci l'oggetto Match creato
+            return ResponseEntity.status(HttpStatus.CREATED).body(match); // Return the created Match object
         } catch (Exception e) {
-            // Gestione degli errori
             System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
@@ -69,11 +64,10 @@ public abstract class CommonPlayerAdminController {
 
     public ResponseEntity<?> createTournament(@RequestBody @Valid TournamentDTO tournamentDTO) {
         try {
-            // Ottieni l'utente autenticato
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String currentUsername = authentication.getName();
 
-            // Copia i campi del DTO in un oggetto Tournament
+            // Copy the DTO fields in a tournament object
             Tournament tournament = new Tournament();
             BeanUtils.copyProperties(tournamentDTO, tournament);
             tournament.setCreator(currentUsername);
@@ -81,12 +75,12 @@ public abstract class CommonPlayerAdminController {
 
             Tournament createdTournament = tournamentService.createTournament(tournament);
 
-            // Crea il torneo
+            // Create the tournament
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTournament);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante la creazione del torneo: " + e.getMessage());
+                    .body(e.getMessage());
         }
     }
 
@@ -94,18 +88,17 @@ public abstract class CommonPlayerAdminController {
         try {
             return ResponseEntity.ok(tournamentService.getAllTournaments());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante il recupero dei tornei: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     public ResponseEntity<?> deleteTournament(@PathVariable String tournamentId) {
         if (tournamentId == null || tournamentId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID torneo non valido");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tournament ID not found.");
         }
         try {
             tournamentService.deleteTournament(tournamentId);
-            return ResponseEntity.ok("Torneo eliminato con successo");
+            return ResponseEntity.ok("Tournament deleted successfuly.");
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -126,7 +119,7 @@ public abstract class CommonPlayerAdminController {
             tournamentService.addMostImportantMatches(tournamentId, matches);
             return ResponseEntity.ok("Match added to tournament " + tournamentId);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error adding match: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -135,15 +128,15 @@ public abstract class CommonPlayerAdminController {
         try {
             return ResponseEntity.ok(tournamentService.getTournamentsByDate(startDate, endDate));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante il recupero dei tornei: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
-    public ResponseEntity<?> getCreatedTournaments(@PathVariable String creator) {
+    public ResponseEntity<?> getTournamentsByCreator(@PathVariable String creator) {
         try {
             return ResponseEntity.ok(tournamentService.getCreatedTournaments(creator));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante il recupero dei tornei: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 }

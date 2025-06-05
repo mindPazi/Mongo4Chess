@@ -21,29 +21,11 @@ public class Tournament {
     private int eloMin;
     private int eloMax;
     private String winner;
-    // lista dei giocatori iscritti al torneo, con la posizione raggiunta
+    // list of players registered for the tournament, with the position achieved
     private List<TournamentPlayer> players = new ArrayList<>();
-    // lista delle partite più importanti del torneo
+    // list of the most important matches of the tournament
     private List<TournamentMatch> matches = new ArrayList<>();
 
-    public Tournament(String name, int eloMin, int eloMax, int maxPlayers) {
-        this.maxPlayers = maxPlayers;
-        this.name = name;
-        this.eloMin = eloMin;
-        this.eloMax = eloMax;
-        this.startDate = new Date();
-    }
-
     public Tournament() {
-    }
-
-    // Metodo per aggiungere un giocatore
-    public void addPlayer(TournamentPlayer player) {
-        this.players.add(player);
-    }
-
-    // Metodo per rimuovere un giocatore
-    public void removePlayer(String playerUsername) {
-        this.players.removeIf(player -> player.getUsername().equals(playerUsername));
     }
 }

@@ -1,11 +1,9 @@
 package com.example.demo.DTO;
 
-import com.example.demo.model.Player;
 import com.example.demo.validation.PowerOfTwo;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.util.Date;
-import java.util.List;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

@@ -3,7 +3,6 @@ package com.example.demo.dao;
 import com.example.demo.model.*;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
@@ -24,11 +23,11 @@ public class TournamentDAO {
         this.mongoTemplate = mongoTemplate;
         MongoDatabase database = mongoClient.getDatabase("chessDB");
 
-        // serve per la query getTournamentByCreator
+        // Useful for the query getTournamentByCreator
         database.getCollection("TournamentCollection").createIndex(new Document("creator", 1));
     }
 
-    // Metodo per creare e salvare un torneo
+    // Method to create and save a tournament
     public Tournament createTournament(Tournament tournament) {
         try {
             Tournament savedTournament = mongoTemplate.save(tournament, "TournamentCollection");
@@ -44,11 +43,6 @@ public class TournamentDAO {
         Query query = new Query(Criteria.where("id").is(tournamentId));
         mongoTemplate.remove(query, Tournament.class, "TournamentCollection");
         System.out.println("Tournament deleted successfully: " + tournamentId);
-    }
-
-    public void updateTournament(Tournament tournament) {
-        mongoTemplate.save(tournament, "TournamentCollection"); // MongoDB aggiorna se l'ID esiste
-        System.out.println("Tournament updated successfully: " + tournament);
     }
 
 
@@ -72,30 +66,34 @@ public class TournamentDAO {
     }
 
 
-    // Aggiunge un giocatore al torneo
+    // Adding a player to the tournament
     public void addPlayer(String tournamentId, TournamentPlayer player) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
         Update update = new Update().push("players", player);
         mongoTemplate.updateFirst(query, update, Tournament.class);
-        System.out.println("Giocatore " + player.getUsername() + " aggiunto al torneo: " + tournamentId);
+        System.out.println("Player " + player.getUsername() + " added to the tournament: " + tournamentId);
     }
 
-    // Rimuove un giocatore dal torneo
+    // Removing a player from the tournament
     public void removePlayer(String tournamentId, String player) {
         Query query = new Query(Criteria.where("id").is(tournamentId).and("players.username").is(player));
         Update update = new Update().pull("players", new BasicDBObject("username", player));
         UpdateResult result = mongoTemplate.updateFirst(query, update, Tournament.class);
         if (result.getModifiedCount() > 0) {
-            System.out.println("Giocatore " + player + " rimosso dal torneo: " + tournamentId);
+            System.out.println("Player " + player + " removed form the tournament: " + tournamentId);
         } else {
-            System.out.println("Giocatore " + player + " non trovato o non rimosso dal torneo: " + tournamentId);
+            System.out.println("Player " + player + " not found or not removed from the tournament: " + tournamentId);
         }
     }
 
 
     public Tournament getTournament(String tournamentId) {
         try{
-            return mongoTemplate.findById(tournamentId, Tournament.class, "TournamentCollection");
+            Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class, "TournamentCollection");
+            if (tournament == null) {
+                throw new IllegalArgumentException("Tournament with ID " + tournamentId + " does not exist");
+            }
+            return tournament;
         } catch (Exception e) {
             System.out.println("Error getting tournament: " + e.getMessage());
             throw new RuntimeException(e.getMessage());
@@ -119,7 +117,7 @@ public class TournamentDAO {
     public void updatePositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
         Query query = new Query(Criteria.where("id").is(tournamentId));
         Update update = new Update().set("players", tournamentPlayers);
-        // Trova il player con posizione 1 e aggiorna il campo winner
+        // Find the player with position 1 and update the winner field
         tournamentPlayers.stream()
                 .filter(player -> player.getPosition() == 1)
                 .findFirst()
@@ -147,10 +145,34 @@ public class TournamentDAO {
         System.out.println("Creator updated successfully: " + currentUsername + " to " + newUsername);
     }
 
-    public void updatePlayerUsernameInTournaments(String currentUsername, String newUsername) {
-        Query query = new Query(Criteria.where("players.username").is(currentUsername).orOperator(Criteria.where("creator").is(currentUsername)));
-        Update update = new Update().set("players.$.username", newUsername).set("creator", newUsername);
-        mongoTemplate.updateMulti(query, update, Tournament.class);
-        System.out.println("Player username and creator updated successfully: " + currentUsername + " to " + newUsername);
+    public void updateCreatorUsernameInTournaments(String currentUsername, String newUsername) {
+        mongoTemplate.updateMulti(
+                Query.query(Criteria.where("creator").is(currentUsername)),
+                Update.update("creator", newUsername),
+                Tournament.class
+        );
     }
+
+    public void updateWinnerUsernameInTournaments(String currentUsername, String newUsername) {
+        // Update "winner"
+        mongoTemplate.updateMulti(
+                Query.query(Criteria.where("winner").is(currentUsername)),
+                Update.update("winner", newUsername),
+                Tournament.class
+        );
+    }
+
+        public void updatePlayerUsernameInTournaments(String currentUsername, String newUsername){
+            // Update array players[].username using arrayFilters
+            Update update = new Update()
+                    .set("players.$[elem].username", newUsername)
+                    .filterArray(Criteria.where("elem.username").is(currentUsername));
+
+            mongoTemplate.updateMulti(
+                    Query.query(Criteria.where("players.username").is(currentUsername)),
+                    update,
+                    Tournament.class
+            );
+        }
+
 }

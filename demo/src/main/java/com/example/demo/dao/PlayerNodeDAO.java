@@ -1,6 +1,5 @@
 package com.example.demo.dao;
 
-import com.example.demo.model.Player;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,11 +22,10 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
            "a.blackWins = a.blackWins + $blackWins, a.whiteDraws = a.whiteDraws + $whiteDraws, " +
            "a.blackDraws = a.blackDraws + $blackDraws, a.whiteLosses = a.whiteLosses + $whiteLosses, " +
            "a.blackLosses = a.blackLosses + $blackLosses")
-    void updatePlayerStats(@Param("usernayme") String username, @Param("elo") int elo,
+    void updatePlayerStats(@Param("username") String username, @Param("elo") int elo,
                            @Param("whiteWins") int whiteWins, @Param("blackWins") int blackWins,
                            @Param("whiteDraws") int whiteDraws, @Param("blackDraws") int blackDraws,
                            @Param("whiteLosses") int whiteLosses, @Param("blackLosses") int blackLosses);
-
 
     @Query("USE chessDB " +
            "MATCH (a:PlayerNode {username: $playerId1}), (b:PlayerNode {username: $playerId2}) " +
@@ -45,12 +43,6 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
            "RETURN b")
     List<PlayerNode> getFriends(String playerId1);
 
-        /*@Query("USE chessDB " +
-                        "CREATE (p:PlayerNode {username: $id, username: $username, elo: $elo, " +
-                        "blackWins: 0, whiteWins: 0, whiteDraws: 0, blackDraws: 0, " +
-                        "whiteLosses: 0, blackLosses: 0, isBanned: false})")
-        void addPlayer(String id, String username, int elo);*/
-
     @Query("USE chessDB " + "CREATE (p:PlayerNode {username: $username, elo: $elo, " +
            "blackWins: 0, whiteWins: 0, whiteDraws: 0, blackDraws: 0, " +
            "whiteLosses: 0, blackLosses: 0}) RETURN p")
@@ -63,10 +55,6 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
     @Query("USE chessDB " +
            "MATCH (p:PlayerNode {username: $playerId}) RETURN p")
     PlayerNode getPlayerById(String playerId);
-
-    @Query("USE chessDB " +
-           "MATCH (p:PlayerNode) RETURN p")
-    List<PlayerNode> getAllPlayers();
 
     @Query("USE chessDB " +
            "MATCH (p:PlayerNode {username: $playerId}) RETURN p")

@@ -25,7 +25,7 @@ public class PlayerDAO {
         this.mongoTemplate = mongoTemplate;
         MongoDatabase mongodatabase = mongoclient.getDatabase("chessDB");
         this.playerCollection = mongodatabase.getCollection("PlayerCollection");
-        // Indice unico su username
+        // Unique index on username
         this.playerCollection.createIndex(
                 new Document("username", 1),
                 new com.mongodb.client.model.IndexOptions().unique(true));
@@ -59,26 +59,20 @@ public class PlayerDAO {
     }
 
     public void updatePlayerUsername(String oldUsername, String newUsername) {
-
-        // Esegui l'aggiornamento nel database
         playerCollection.updateOne(
                 new Document("username", oldUsername),
                 new Document("$set", new Document("username", newUsername)));
     }
 
-    public void getStats() {
-        // get stats
-    }
-
     public List<PlayerMatch> getEloTrend(String username) {
-        // Recupera il player tramite il metodo esistente
+        // Get the player first
         Player player = getPlayer(username);
 
         if (player == null) {
-            throw new RuntimeException("Player non trovato con username: " + username);
+            throw new RuntimeException("Player not found: " + username);
         }
 
-        // ritorna la lista di elo e data del match
+        // return the list of the elos with the dates
         return player.getMatches();
     }
 
@@ -125,12 +119,6 @@ public class PlayerDAO {
         return player;
     }
 
-    @SuppressWarnings("unused")
-    private Document convertPlayerToDocument(Player player) {
-        return new Document("username", player.getUsername())
-                .append("password", player.getPassword());
-    }
-
     public List<PlayerTournament> getMyTournaments(String playerId) {
         Player player = getPlayer(playerId);
         if (player == null) {
@@ -158,17 +146,11 @@ public class PlayerDAO {
     public void updateTournamentPositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
         for (TournamentPlayer tournamentPlayer : tournamentPlayers) {
             playerCollection.updateOne(new Document("username", tournamentPlayer.getUsername())
-                    .append("tournaments.id", tournamentId),
+                            .append("tournaments.id", tournamentId),
                     new Document("$set", new Document("tournaments.$.position", tournamentPlayer.getPosition())));
         }
     }
 
-    public void removeMatchRef(String username, Date date) {
-        Document pullQuery = new Document("matches", new Document("date", date));
-        playerCollection.updateOne(
-                new Document("username", username),
-                new Document("$pull", pullQuery));
-    }
 
     public void rollbackPlayer(Player player) {
         if (player == null || player.getUsername() == null) {
@@ -177,10 +159,6 @@ public class PlayerDAO {
         Document doc = new Document("username", player.getUsername())
                 .append("password", player.getPassword());
 
-        // Aggiungi solo se non è zero
-        //if (player.getElo() != 0) {
-        //    doc.append("elo", player.getElo());
-        //}
         if (player.getMatches() != null && !player.getMatches().isEmpty()) {
             doc.append("matches", player.getMatches());
         }
@@ -204,10 +182,27 @@ public class PlayerDAO {
     }
 
     public void removeMatch(String player, Date date, int elo) {
-        // Rimuove il match dalla lista dei match del giocatore
+        // Remove the match from the player's match list
         playerCollection.updateOne(
                 new Document("username", player),
                 new Document("$pull", new Document("matches", new Document("date", date).append("elo", elo)))
         );
+    }
+
+    public void deleteAllMatches() {
+        playerCollection.updateMany(new Document(),
+                new Document("$set", new Document("matches", new ArrayList<>())));
+    }
+
+    public void deleteAllMatchesByPlayer(String player) {
+        playerCollection.updateOne(new Document("username", player),
+                new Document("$set", new Document("matches", new ArrayList<>())));
+    }
+
+    public void deleteMatchesBeforeDate(Date date) {
+        playerCollection.updateMany(
+                new Document("matches.date", new Document("$lt", date)),
+                new Document("$pull", new Document("matches",
+                        new Document("date", new Document("$lt", date)))));
     }
 }

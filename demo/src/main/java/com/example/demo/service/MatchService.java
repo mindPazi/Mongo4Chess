@@ -21,9 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.TransactionContext;
 
 @Service
 
@@ -39,78 +36,77 @@ public class MatchService {
         this.playerDAO = playerDAO;
     }
 
-    @Transactional // Questa gestirà il rollback/commit per MongoDB
+    @Transactional // This will handle rollback/commit for MongoDB
     public void saveMatch(Match match) throws Exception {
-        // 1) validazioni base
+        // 1) Basic validations
         if (match.getWhite().equals(match.getBlack())) {
-            throw new IllegalArgumentException("Un giocatore non può giocare contro se stesso");
+            throw new IllegalArgumentException("A player " +
+                                               "cannot play with themselves ! ");
         }
         if (!List.of("1-0", "0-1", "1/2-1/2").contains(match.getResult())) {
-            throw new IllegalArgumentException("Risultato non valido: " + match.getResult());
+            throw new IllegalArgumentException(" Invalid result : " + match.getResult());
         }
 
-        // 2) recupero Elo attuale da Neo4j
+        // 2) Getting the actual elo from the node in Neo4j
         Optional<Integer> whiteEloOpt = playerNodeDAO.getElo(match.getWhite());
         Optional<Integer> blackEloOpt = playerNodeDAO.getElo(match.getBlack());
         if (whiteEloOpt.isEmpty() || blackEloOpt.isEmpty()) {
-            // Questo scenario potrebbe indicare un errore di sincronizzazione o che i giocatori non sono stati creati correttamente
-            throw new Exception("Uno o entrambi i giocatori non esistono in Neo4j. Impossibile procedere.");
+        // This scenario could indicate a synchronization error or that the players were not created correctly .
+        logger.error("One or both players do not exist in Neo4j. Cannot proceed.");
+        throw new Exception("One or both players do not exist. Cannot proceed.");
         }
         match.setWhiteElo(whiteEloOpt.get());
         match.setBlackElo(blackEloOpt.get());
 
-        // 3) calcolo deltaElo (clamp a zero)
+        // 3) deltaElo calculation (zero clamp)
         List<Integer> deltaElos = new ArrayList<>(PlayerService.calculateNewElo(match));
         if (match.getWhiteElo() + deltaElos.get(0) < 0)
             deltaElos.set(0, 0);
         if (match.getBlackElo() + deltaElos.get(1) < 0)
             deltaElos.set(1, 0);
 
-        // Persistenza in MongoDB (Transazione MongoDB) ---
+        // 4) Persistence in MongoDB ( MongoDB Transaction ) ---
         try {
             persistMatchInMongo(match);
         } catch (Exception e) {
-            logger.error("Errore durante la persistenza in MongoDB. Transazione MongoDB annullata.", e);
-            throw new RuntimeException("Errore nel salvataggio del match, consulta i log.", e);
+            logger.error("Error saving match. MongoDB transaction cancelled.", e);
+            throw new RuntimeException("Error saving match");
         }
 
-        // Aggiornamento Neo4j (Transazione Neo4j) ---
+        // 5) Neo4j Update ( Neo4j Transaction ) ---
         try {
             updateNeo4jStatsAndRelations(match, deltaElos);
         } catch (Neo4jException e) {
-            logger.error("Errore durante l'aggiornamento delle statistiche in Neo4j.", e);
-            // se Neo4j fallisce, compensazione MongoDB
+            // If Neo4j fails, MongoDB compensation
             compensateMongoMatchSave(match);
-            throw new RuntimeException("Errore nell'aggiornamento di Neo4j. Eseguito rollback su MongoDB. Consulta i log.", e);
+            logger.error("Error updating Neo4j. Rolling back in MongoDB.", e);
+            throw new RuntimeException("Error saving match");
         }
 
-        logger.info("Match salvato con successo in MongoDB e Neo4j.");
+        logger.info("Match successfully saved in MongoDB and Neo4j.");
     }
 
-    @Transactional//("mongoTransactionManager") // Questa transazione garantisce l'atomicità delle operazioni MongoDB
+    @Transactional//("mongoTransactionManager") // This transaction ensures atomicity of MongoDB operations
     protected void persistMatchInMongo(Match match) {
-        // 4) persistenza in MongoDB
-        matchDAO.saveMatch(match); // Salva il documento Match
-        logger.debug("Match salvato in matchDAO.");
+        matchDAO.saveMatch(match); // Save the Match document
+        logger.debug("Match saved in matchDAO.");
 
-        // 4.1) aggiunta match ai giocatori in MongoDB
-        // Assicurati che PlayerMatch abbia l'ID del match se serve per la compensazione
+        // Adding Matches to Players in MongoDB
         PlayerMatch whitePlayerMatch = new PlayerMatch(match.getWhiteElo(), match.getDate());
         PlayerMatch blackPlayerMatch = new PlayerMatch(match.getBlackElo(), match.getDate());
 
         playerDAO.addMatch(match.getWhite(), whitePlayerMatch);
-        logger.debug("Match aggiunto al giocatore White in MongoDB.");
+        logger.debug("Match added to white player in MongoDB.");
         playerDAO.addMatch(match.getBlack(), blackPlayerMatch);
-        logger.debug("Match aggiunto al giocatore Black in MongoDB.");
+        logger.debug("Match added to black player in MongoDB.");
     }
 
     @Transactional
     protected void updateNeo4jStatsAndRelations(Match match, List<Integer> deltaElos) {
-        // Utilizziamo una singola transazione Neo4j per tutte le operazioni sul grafo
-        // 5) relazione "played" in Neo4j
+        // We use a single Neo4j transaction for all graph operations
         playerNodeDAO.setPlayedEdge(match.getWhite(), match.getBlack());
 
-        // 6) aggiornamento statistiche Neo4j
+        // Neo4j statistics update
         switch (match.getResult()) {
             case "1-0":
                 playerNodeDAO.updatePlayerStats(match.getWhite(), deltaElos.get(0), 1, 0, 0, 0, 0, 0);
@@ -125,39 +121,53 @@ public class MatchService {
                 playerNodeDAO.updatePlayerStats(match.getBlack(), deltaElos.get(1), 0, 0, 0, 1, 0, 0);
                 break;
         }
-        logger.debug("Statistiche Neo4j e relazione PLAYED aggiornate.");
-    } // La transazione Neo4j viene commessa o rollbacckata automaticamente qui
+        logger.debug("Statistic updated in Neo4j and PLAYED relation updated.");
+    } // Neo4j transaction is automatically committed or rolled back here
 
 
-    // Metodo di compensazione per MongoDB
-    @Transactional//("mongoTransactionManager") // Questa transazione garantisce l'atomicità del rollback su MongoDB
+    // Compensation method for MongoDB : if Neo4j transaction
+    // fails, the rollback on MongoDB is performed.
+    @Transactional//("mongoTransactionManager")
     protected void compensateMongoMatchSave(Match match) {
-        logger.warn("Avvio compensazione per MongoDB per match ID: {}", match.getId());
+        logger.warn("Start compensation for MongoDB for ID match: {}", match.getId());
         try {
-            // Rimuovi il match salvato
-            matchDAO.deleteMatch(match); // Assumi che matchDAO abbia un metodo delete
-            logger.debug("Match con ID {} rimosso da matchDAO (compensazione).", match.getId());
+            // Saved match removed
+            matchDAO.deleteMatch(match);
+            logger.debug("Match with ID {} removed from matchDAO (compensation).", match.getId());
 
-            // Rimuovi il match dai giocatori
+            // Match removed from player's document
+            //todo: rimuoverli con l'id del match
             playerDAO.removeMatch(match.getWhite(), match.getDate(), match.getWhiteElo());
             playerDAO.removeMatch(match.getBlack(), match.getDate(), match.getBlackElo());
-            logger.debug("Match con ID {} rimosso dai giocatori in MongoDB (compensazione).", match.getId());
-
-            logger.info("Compensazione MongoDB per match ID {} completata.", match.getId());
+            logger.debug("Match with ID {} removed from players in MongoDB (compensation).", match.getId());
+            logger.info("MongoDB compensation for match ID {} completed.", match.getId());
         } catch (Exception e) {
-            logger.error("ERRORE CRITICO: Fallimento durante la compensazione MongoDB per match ID {}. Richiede intervento manuale!", match.getId(), e);
-            throw new RuntimeException("Fallimento irreversibile della compensazione MongoDB.", e);
+            logger.error("FATAL ERROR: Failure while clearing MongoDB for match ID {}. Requires manual intervention!", match.getId(), e);
+            throw new RuntimeException("Error saving match");
         }
     }
 
-    // tutte le delete dei match eliminano i match solo dalla collection match, non dai player,
-    // perché quelle info servono al player per recuperare le info sull'elo trend.
+    // Matches are deleted in both player and match collections.
+    // The idea is to lighten the load on the player's document by deleting older matches.
+    // If the admin needs to delete all of a player's matches for some reason (perhaps due to a ban),
+    // they are kept in the opponents' match list (for their elo trend).
+    // Statistics on the graph are kept instead.
+    @Transactional
     public void deleteAllMatches() {
         matchDAO.deleteAllMatches();
+        playerDAO.deleteAllMatches();
     }
 
+    @Transactional
     public void deleteAllMatchesByPlayer(String player) {
         matchDAO.deleteAllMatchesByPlayer(player);
+        playerDAO.deleteAllMatchesByPlayer(player);
+    }
+
+    @Transactional
+    public void deleteMatchesBeforeDate(Date date) {
+        matchDAO.deleteMatchesBeforeDate(date);
+        playerDAO.deleteMatchesBeforeDate(date);
     }
 
     public List<Document> getNumOfWinsAndDrawsPerElo(int elomin, int elomax) {
@@ -178,10 +188,6 @@ public class MatchService {
 
     public List<Document> getMostPlayedOpeningsPerElo(int elomin, int elomax) {
         return matchDAO.getMostPlayedOpeningsPerElo(elomin, elomax);
-    }
-
-    public void deleteMatchesBeforeDate(Date date) {
-        matchDAO.deleteMatchesBeforeDate(date);
     }
 
     public List<Match> getMatchesByDate(Date startDate, Date endDate) {

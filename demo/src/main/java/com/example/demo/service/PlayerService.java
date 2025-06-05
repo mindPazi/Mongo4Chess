@@ -6,7 +6,6 @@ import com.example.demo.dao.PlayerNodeDAO;
 import com.example.demo.dao.TournamentDAO;
 import com.example.demo.model.*;
 import com.mongodb.MongoException;
-import lombok.Setter;
 
 import java.util.List;
 
@@ -43,8 +42,8 @@ public class PlayerService {
         try {
             playerDAO.banPlayer(playerUsername);
         } catch (RuntimeException e) {
-            logger.error("Errore durante il ban del giocatore: {}", playerUsername, e);
-            throw new RuntimeException("Errore nel bannare il giocatore: " + playerUsername);
+            logger.error("Error banning player: {}", playerUsername, e);
+            throw new RuntimeException("Errore banning: " + playerUsername);
         }
     }
 
@@ -52,8 +51,8 @@ public class PlayerService {
         try {
             playerDAO.unBanPlayer(playerUsername);
         } catch (Exception e) {
-            logger.error("Errore durante lo sblocco del giocatore: {}", playerUsername, e);
-            throw new RuntimeException("Errore nel sbloccare il giocatore: " + playerUsername);
+            logger.error("Error unbanning player\n: {}", playerUsername, e);
+            throw new RuntimeException("Error unbanning: " + playerUsername);
         }
     }
 
@@ -73,7 +72,8 @@ public class PlayerService {
             if (mongoPlayerBackup != null) {
                 playerDAO.rollbackPlayer(mongoPlayerBackup);
             }
-            throw new RuntimeException("Errore cancellando da Neo4j, rollback su Mongo eseguito!", neo4jEx);
+            logger.error("Error deleting in Neo4j, rollback in MongoDB executed. {}", neo4jEx.getMessage(), neo4jEx);
+            throw new RuntimeException("Error deleting the player");
         }
     }
 
@@ -85,7 +85,7 @@ public class PlayerService {
             Player player = playerDAO.getPlayer(currentUsername);
 
             if (!encoder.matches(oldPassword, player.getPassword())) {
-                throw new IllegalArgumentException("La vecchia password non è corretta.");
+                throw new IllegalArgumentException("The old paassword is incorrect.");
             }
 
             String hashedNewPassword = encoder.encode(newPassword);
@@ -95,12 +95,12 @@ public class PlayerService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiornamento della password per il giocatore: {}", e.getMessage(), e);
-            throw new RuntimeException("Errore nell'aggiornare la password per il giocatore.");
+            logger.error("Error updating the password: {}", e.getMessage(), e);
+            throw new RuntimeException("Error updating the password");
         }
     }
 
-    @Transactional  // serve a mongo
+    @Transactional  //for mongo
     public void updatePlayerUsername(String newUsername) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -110,24 +110,25 @@ public class PlayerService {
             playerDAO.updatePlayerUsername(currentUsername, newUsername);
             matchDAO.updatePlayerUsernameInMatches(currentUsername, newUsername);
             tournamentDAO.updatePlayerUsernameInTournaments(currentUsername, newUsername);
+            tournamentDAO.updateCreatorUsernameInTournaments(currentUsername, newUsername);
+            tournamentDAO.updateWinnerUsernameInTournaments(currentUsername, newUsername);
         } catch (Neo4jException neo4jException) {
-            // così se lancia eccezione sia neo4j che mongo, esco subito senza tentare di fare rollback su neo4j
-            logger.error("Errore durante l'aggiornamento del nome utente in Neo4j da {} a {}", currentUsername, newUsername, neo4jException);
-            throw new RuntimeException("Errore nell'aggiornare il nome utente in Neo4j da " + currentUsername + " a " + newUsername, neo4jException);
+            // so if both neo4j and mongo throw exception, I exit immediately without trying to rollback on neo4j
+            logger.error("Error updating the username in Neo4j from " + currentUsername + " to " + newUsername, neo4jException);
+            throw new RuntimeException("Error updating the username from " + currentUsername + " to " + newUsername);
         } catch (MongoException mongoException) {
-            // Rollback automatico su neo4j in caso di errore MongoDB
+            // Automatic rollback on neo4j on MongoDB failure
             playerNodeDAO.updatePlayerUsername(newUsername, currentUsername);
-            logger.error("Errore durante l'aggiornamento del nome utente in Mongo, rollback Neo4j eseguito!", mongoException);
-            throw new RuntimeException("Errore nell'aggiornare il nome utente in MongoDB, rollback Neo4j eseguito!", mongoException);
+            logger.error("Error updating the username from " + currentUsername + " to"  + newUsername + " in MongoDB, rollback in Neo4j executed!", mongoException);
+            throw new RuntimeException("Error updating the username from " + currentUsername + " to " + newUsername);
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiornamento del nome utente da {} a {}", currentUsername, newUsername,
-                    e);
+            logger.error("Error updating the username in Neo4j from " + currentUsername + " to " + newUsername, e);
             throw new RuntimeException(
-                    "Errore nell'aggiornare il nome utente da " + currentUsername + " a " + newUsername);
+                    "Error updating the username from " + currentUsername + " to " + newUsername);
         }
     }
 
-    // posso vedere le statistiche di tutti i giocatori
+    // I see the satistics of the player
     public PlayerNode getStats(String playerId) {
         return playerNodeDAO.getStats(playerId);
     }
@@ -136,8 +137,8 @@ public class PlayerService {
         try {
             return playerDAO.getEloTrend(playerId);
         } catch (Exception e) {
-            logger.error("Errore durante il recupero del trend Elo per il giocatore {}", playerId, e);
-            throw new RuntimeException("Errore nel recupero del trend Elo per il giocatore " + playerId);
+            logger.error("Error getting the elo trend for {}", playerId, e);
+            throw new RuntimeException("Error getting the elo trend for " + playerId);
         }
     }
 
@@ -148,12 +149,12 @@ public class PlayerService {
             String playerId = authentication.getName();
 
             if(playerNodeDAO.getPlayerById(friendId)==null)
-                throw new RuntimeException("Player not found"+ friendId);
+                throw new RuntimeException("Player not found " + friendId);
 
             playerNodeDAO.addFriend(playerId, friendId);
         } catch (Exception e) {
-            logger.error("Errore durante l'aggiunta dell'amico {} per il giocatore {}", friendId, e.getMessage(), e);
-            throw new RuntimeException("Errore nell'aggiungere l'amico " + friendId);
+            logger.error("Error adding friend: ", friendId, e.getMessage(), e);
+            throw new RuntimeException("Error adding friend " + friendId);
         }
     }
 
@@ -163,8 +164,8 @@ public class PlayerService {
             String playerId = authentication.getName();
             return playerNodeDAO.getFriends(playerId);
         } catch (Exception e) {
-            logger.error("Errore durante il recupero della lista degli amici", e.getMessage(), e);
-            throw new RuntimeException("Errore durante il recupero della lista degli amici");
+            logger.error("Error getting firend list.", e.getMessage(), e);
+            throw new RuntimeException("Error getting firend list.");
         }
     }
 
@@ -177,28 +178,29 @@ public class PlayerService {
             int removed = playerNodeDAO.removeFriend(playerId, friendId);
 
             if (removed == 0) {
-                throw new IllegalArgumentException("Amico non trovato o relazione inesistente");
+                throw new IllegalArgumentException("Friend not found.");
             }
         } catch (Exception e) {
-            logger.error("Errore durante la rimozione dell'amico {} per il giocatore {}", friendId, e.getMessage(), e);
-            throw new RuntimeException("Errore nella rimozione dell'amico " + friendId);
+            logger.error("Error removing friend: ", friendId, e.getMessage(), e);
+            throw new RuntimeException("Error removing friend: " + friendId);
         }
     }
 
-    //@Transactional non serve, su mongo c'è l'inserimento di un elemento su una sola collection
+    //@Transactional is not needed, on mongo there is the insertion of an element on only one collection
     public String createPlayer(String username, String password, int elo) {
         if (playerDAO.getPlayer(username) == null) {
             playerDAO.createPlayer(username, password);
             try {
                 playerNodeDAO.createPlayer(username, elo);
-                return "Giocatore creato con successo";
+                return "Player created with success";
             } catch (Exception neo4jEx) {
                 // rollback esplicito su Mongo in caso di fallimento Neo4j
                 playerDAO.deletePlayer(username);
-                throw new RuntimeException("Errore creando in Neo4j, rollback Mongo eseguito!", neo4jEx);
+                logger.error("Error in Neo4j, rollback in MongoDB executed.", neo4jEx);
+                throw new RuntimeException("Error during the registration.");
             }
         } else {
-            return "Giocatore già esistente";
+            return "Username already taken.";
         }
     }
 

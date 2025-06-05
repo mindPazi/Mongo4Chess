@@ -20,7 +20,4 @@ public class PlayerTournament {
         this.position = position;
 
     }
-
-    public PlayerTournament(String id, int position) {
-    }
 }

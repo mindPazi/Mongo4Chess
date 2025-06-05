@@ -23,8 +23,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.demo.service.MatchService;
 
-//todo: delete friend
-//todo: continuare a testare le get
 @RestController
 @RequestMapping("/api/player")
 @Tag(name = "Player Controller", description = "Player operations")
@@ -45,7 +43,7 @@ public class PlayerController extends CommonPlayerAdminController {
         String currentUsername = authentication.getName();
 
         if (!matchDTO.getWhite().equals(currentUsername) && !matchDTO.getBlack().equals(currentUsername)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Devi essere uno dei giocatori per salvare un match");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You have to be one of the two players to save the match!");
         }
         return super.saveMatch(matchDTO);
     }
@@ -62,7 +60,7 @@ public class PlayerController extends CommonPlayerAdminController {
             String playerId = authentication.getName();
             return ResponseEntity.ok(playerService.getMyTournaments(playerId));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Errore durante il recupero delle posizioni: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
@@ -76,7 +74,6 @@ public class PlayerController extends CommonPlayerAdminController {
         return super.createTournament(tournamentDTO);
     }
 
-    //un admin può eliminare qualsiasi torneo
     @Operation(summary = "Elimina un torneo")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Torneo eliminato con successo"),
@@ -96,8 +93,7 @@ public class PlayerController extends CommonPlayerAdminController {
         try {
             return ResponseEntity.ok(playerService.getStats(playerId));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante il recupero delle statistiche: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -110,14 +106,13 @@ public class PlayerController extends CommonPlayerAdminController {
     public ResponseEntity<?> updatePlayerUsername(@PathVariable String newUsername) {
         if (newUsername == null || newUsername.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Dati non validi per l'aggiornamento dello username");
+                    .body("Invalid data to update the username.");
         }
         try {
             playerService.updatePlayerUsername(newUsername);
-            return ResponseEntity.ok("Username aggiornato con successo");
+            return ResponseEntity.ok("Username updated successfuly.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante l'aggiornamento dello username");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -132,10 +127,9 @@ public class PlayerController extends CommonPlayerAdminController {
             String oldPassword = updatePasswordDTO.getOldPassword();
             String newPassword = updatePasswordDTO.getNewPassword();
             playerService.updatePlayerPassword(oldPassword, newPassword);
-            return ResponseEntity.ok("Password aggiornata con successo");
+            return ResponseEntity.ok("Password updated successfuly.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante l'aggiornamento della password");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -155,18 +149,17 @@ public class PlayerController extends CommonPlayerAdminController {
     public ResponseEntity<String> joinTournament(@PathVariable String tournamentId) {
 
         if (tournamentId == null || tournamentId.trim().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Dati non validi per unirsi al torneo");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data.");
         }
 
         try {
             tournamentService.joinTournament(tournamentId);
-            return ResponseEntity.ok("Giocatore aggiunto al torneo");
+            return ResponseEntity.ok("Tournament successfuly joined.");
         } catch (IllegalArgumentException e) {
-            // Per errori noti, come torneo non trovato
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             // Per errori di sistema o sconosciuti
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante l'aggiunta al torneo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -178,13 +171,13 @@ public class PlayerController extends CommonPlayerAdminController {
     })
     @PatchMapping("/tournament/leave/{tournamentId}")
     public ResponseEntity<String> leaveTournament(@PathVariable String tournamentId) {
-        try{
+        try {
             tournamentService.removePlayer(tournamentId, SecurityContextHolder.getContext().getAuthentication().getName());
             return ResponseEntity.ok("Player left the tournament successfully");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore durante l'abbandono del torneo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -216,8 +209,7 @@ public class PlayerController extends CommonPlayerAdminController {
             List<Tournament> tournaments = tournamentService.getAvailableTournaments();
             return ResponseEntity.ok(tournaments);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante il recupero dei tornei attivi: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -233,8 +225,8 @@ public class PlayerController extends CommonPlayerAdminController {
             @ApiResponse(responseCode = "200", description = "Elenco tornei creati ottenuto con successo")
     })
     @GetMapping("/tournament/created/{creator}")
-    public ResponseEntity<?> getCreatedTournaments(@PathVariable String creator) {
-        return super.getCreatedTournaments(creator);
+    public ResponseEntity<?> getTournamentsByCreator(@PathVariable String creator) {
+        return super.getTournamentsByCreator(creator);
     }
 
     @Operation(summary = "Ottieni l'andamento dell'ELO di un giocatore")
@@ -248,7 +240,7 @@ public class PlayerController extends CommonPlayerAdminController {
             return ResponseEntity.ok(eloTrend);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante il recupero dell'andamento dell'ELO: " + e.getMessage());
+                    .body(e.getMessage());
         }
     }
 
@@ -262,8 +254,7 @@ public class PlayerController extends CommonPlayerAdminController {
         try {
             return ResponseEntity.ok(playerService.getFriends());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error retrieving the friends.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -275,16 +266,14 @@ public class PlayerController extends CommonPlayerAdminController {
     @PostMapping("/add_friend/{friendId}")
     public ResponseEntity<?> addFriend(@PathVariable String friendId) {
         if (friendId == null || friendId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID amico non valido");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid friend ID.");
         }
 
         try {
-            // Passa solo friendId al Service
             playerService.addFriend(friendId);
             return ResponseEntity.ok("Friend added successfully.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante l'aggiunta dell'amico");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -297,18 +286,16 @@ public class PlayerController extends CommonPlayerAdminController {
     @DeleteMapping("/remove_friend/{friendId}")
     public ResponseEntity<?> removeFriend(@PathVariable String friendId) {
         if (friendId == null || friendId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID amico non valido");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Friend ID invalid.");
         }
 
         try {
             playerService.removeFriend(friendId);
-            return ResponseEntity.ok("Amico rimosso con successo");
+            return ResponseEntity.ok("Friend successfuly removed.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Errore durante la rimozione dell'amico");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
-
 }

@@ -2,7 +2,8 @@ package com.example.demo.model;
 
 import lombok.Data;
 
-//viene salvato il match per intero e il grado, così da poter eseguire la query seeMostImportantMatchForTournament
+// the entire match and rank are saved,
+// so that the seeMostImportantMatchForTournament query can be executed
 @Data
 public class TournamentMatch {
     private String matchGrade;
