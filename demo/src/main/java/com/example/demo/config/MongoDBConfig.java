@@ -10,7 +10,9 @@ import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager; // Importa questa classe
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory; // Importa questa classe
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.support.TransactionTemplate;
 
 
 @EnableTransactionManagement // Abilita la gestione delle transazioni
@@ -39,9 +41,9 @@ public class MongoDBConfig extends AbstractMongoClientConfiguration{
         return mongoDatabaseName;
     }
 
-    //todo: testare @transactional una volta fatto il deploy sulle macchine virtuali
-//    @Bean(name = "mongoTransactionManager")
-//    public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
-//        return new MongoTransactionManager(dbFactory);
-//    }
+    @Bean(name = "mongoTransactionManager")
+    public MongoTransactionManager mongoTransactionManager(MongoDatabaseFactory mongoDbFactory) {
+        return new MongoTransactionManager(mongoDbFactory);
+    }
+
 }

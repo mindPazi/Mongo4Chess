@@ -41,7 +41,7 @@ public class TournamentService {
         return tournamentDAO.createTournament(tournament);
     }
 
-    @Transactional
+    @Transactional("mongoTransactionManager")
     public void deleteTournament(String tournamentId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Tournament tournament = tournamentDAO.getTournament(tournamentId);
@@ -76,7 +76,7 @@ public class TournamentService {
         return tournamentDAO.getAvailableTournaments(playerElo);
     }
 
-    @Transactional
+    @Transactional("mongoTransactionManager")
     public void joinTournament(String tournamentId) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -90,7 +90,7 @@ public class TournamentService {
     }
 
     // used by admin
-    @Transactional
+    @Transactional("mongoTransactionManager")
     public void addPlayerByAdmin(String tournamentId, String playerId) throws RuntimeException {
         if (playerDAO.getPlayer(playerId) == null) {
             throw new RuntimeException("Player not found");
@@ -127,7 +127,7 @@ public class TournamentService {
         }
     }
 
-    @Transactional
+    @Transactional("mongoTransactionManager")
     public void removePlayer(String tournamentId, String playerId) {
         // if the tournament has already started I cannot remove the player
         if (new Date().compareTo(tournamentDAO.getTournament(tournamentId).getStartDate()) > 0) {
@@ -138,7 +138,7 @@ public class TournamentService {
         playerDAO.removeTournament(tournamentId, playerId);
     }
 
-    @Transactional
+    @Transactional("mongoTransactionManager")
     public void updatePositions(List<TournamentPlayer> tournamentPlayers, String tournamentId) {
         Tournament tournament = tournamentDAO.getTournament(tournamentId);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

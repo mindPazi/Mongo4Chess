@@ -62,7 +62,7 @@ public class AdminService {
         }
     }
 
-    @Transactional
+    @Transactional("mongoTransactionManager")
     public void updateAdminUsername(String newUsername) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();

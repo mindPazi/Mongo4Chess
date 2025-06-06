@@ -30,6 +30,7 @@ public class PlayerService {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final static int EloConstant = 30;
 
+
     public PlayerService(PlayerDAO playerDAO, PlayerNodeDAO playerNodeDAO, MatchDAO matchDAO,
             TournamentDAO tournamentDAO) {
         this.playerDAO = playerDAO;
@@ -56,7 +57,6 @@ public class PlayerService {
         }
     }
 
-    @Transactional
     public void deletePlayer(String playerUsername) {
         // backup in caso di rollback manuale su Neo4j
         Player mongoPlayerBackup = playerDAO.getPlayer(playerUsername);
@@ -100,7 +100,7 @@ public class PlayerService {
         }
     }
 
-    @Transactional  //for mongo
+    @Transactional("mongoTransactionManager")  //for mongo
     public void updatePlayerUsername(String newUsername) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -193,7 +193,7 @@ public class PlayerService {
             try {
                 playerNodeDAO.createPlayer(username, elo);
                 return "Player created with success";
-            } catch (Exception neo4jEx) {
+            } catch (Neo4jException neo4jEx) {
                 // rollback esplicito su Mongo in caso di fallimento Neo4j
                 playerDAO.deletePlayer(username);
                 logger.error("Error in Neo4j, rollback in MongoDB executed.", neo4jEx);
