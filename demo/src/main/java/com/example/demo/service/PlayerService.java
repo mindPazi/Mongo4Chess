@@ -164,8 +164,8 @@ public class PlayerService {
             String playerId = authentication.getName();
             return playerNodeDAO.getFriends(playerId);
         } catch (Exception e) {
-            logger.error("Error getting firend list.", e.getMessage(), e);
-            throw new RuntimeException("Error getting firend list.");
+            logger.error("Error getting friend list.", e.getMessage(), e);
+            throw new RuntimeException("Error getting friend list.");
         }
     }
 

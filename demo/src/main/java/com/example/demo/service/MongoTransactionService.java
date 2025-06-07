@@ -16,6 +16,7 @@ public class MongoTransactionService {
 
     private final MatchDAO matchDAO;
     private final PlayerDAO playerDAO;
+    private Match savedMatch;
 
     @Autowired
     public MongoTransactionService(MatchDAO matchDAO, PlayerDAO playerDAO) {
@@ -25,12 +26,12 @@ public class MongoTransactionService {
 
     @Transactional("mongoTransactionManager")
     public void persistMatchInMongo(Match match) {
-        matchDAO.saveMatch(match); // Save the Match document
+        savedMatch = matchDAO.saveMatch(match); // Save the Match document
         logger.debug("Match saved in matchDAO.");
 
         // Adding Matches to Players in MongoDB
-        PlayerMatch whitePlayerMatch = new PlayerMatch(match.getWhiteElo(), match.getDate());
-        PlayerMatch blackPlayerMatch = new PlayerMatch(match.getBlackElo(), match.getDate());
+        PlayerMatch whitePlayerMatch = new PlayerMatch(match.getWhiteElo(), match.getDate(), savedMatch.getId());
+        PlayerMatch blackPlayerMatch = new PlayerMatch(match.getBlackElo(), match.getDate(), savedMatch.getId());
 
         playerDAO.addMatch(match.getWhite(), whitePlayerMatch);
         logger.debug("Match added to white player in MongoDB.");
@@ -42,21 +43,20 @@ public class MongoTransactionService {
     // fails, the rollback on MongoDB is performed.
     @Transactional("mongoTransactionManager")
     public void compensateMongoMatchSave(Match match) {
-        logger.warn("Start compensation for MongoDB for ID match: {}", match.getId());
+        logger.warn("Start compensation for MongoDB for ID match: {}", savedMatch.getId());
         try {
             // Saved match removed
-            matchDAO.deleteMatch(match);
-            logger.debug("Match with ID {} removed from matchDAO (compensation).", match.getId());
+            matchDAO.deleteMatch(savedMatch.getId());
+            logger.debug("Match with ID {} removed from matchDAO (compensation).", savedMatch.getId());
 
             // Match removed from player's document
-            //todo: rimuoverli con l'id del match
-            playerDAO.removeMatch(match.getWhite(), match.getDate(), match.getWhiteElo());
-            playerDAO.removeMatch(match.getBlack(), match.getDate(), match.getBlackElo());
-            logger.debug("Match with ID {} removed from players in MongoDB (compensation).", match.getId());
-            logger.info("MongoDB compensation for match ID {} completed.", match.getId());
+            playerDAO.removeMatch(match.getWhite(), savedMatch.getId());
+            playerDAO.removeMatch(match.getBlack(), savedMatch.getId());
+            logger.debug("Match with ID {} removed from players in MongoDB (compensation).", savedMatch.getId());
+            logger.info("MongoDB compensation for match ID {} completed.", savedMatch.getId());
         } catch (Exception e) {
             logger.error("FATAL ERROR: Failure while clearing MongoDB for match ID {}. Requires manual intervention!", match.getId(), e);
-            throw new RuntimeException("Error during MongoDB compensation for match: " + match.getId(), e);
+            throw new RuntimeException("Error during MongoDB compensation for match: " + savedMatch.getId(), e);
         }
     }
 }

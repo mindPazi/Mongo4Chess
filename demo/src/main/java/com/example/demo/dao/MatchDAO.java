@@ -44,16 +44,16 @@ public class MatchDAO {
         matchCollection.createIndex(new Document("blackElo", 1));
     }
 
-    public void saveMatch(Match match) {
-        mongoTemplate.save(match, "MatchCollection");
+    public Match saveMatch(Match match) {
+        return mongoTemplate.save(match, "MatchCollection");
     }
 
     public void deleteAllMatches() {
         matchCollection.deleteMany(new Document());
     }
 
-    public void deleteMatch(Match match) {
-        matchCollection.deleteOne(new Document("_id", match.getId()));
+    public void deleteMatch(String matchId) {
+        matchCollection.deleteOne(new Document("_id", matchId));
     }
 
     public void deleteAllMatchesByPlayer(String player) {
@@ -205,4 +205,12 @@ public class MatchDAO {
         return resultList;
     }
 
+    public Match getMatch(String id) {
+        Query query = new Query(Criteria.where("_id").is(id));
+        Match match = mongoTemplate.findOne(query, Match.class, "MatchCollection");
+        if (match == null) {
+            throw new RuntimeException("Match not found with id: " + id);
+        }
+        return match;
+    }
 }
