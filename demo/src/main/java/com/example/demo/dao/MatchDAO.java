@@ -40,8 +40,8 @@ public class MatchDAO {
         // matchCollection.createIndex(new Document("date", 1));
 
         // Used for the aggregations
-        matchCollection.createIndex(new Document("whiteElo", 1));
-        matchCollection.createIndex(new Document("blackElo", 1));
+        matchCollection.createIndex(new Document("whiteElo", 1).append("blackElo", 1));
+
     }
 
     public Match saveMatch(Match match) {
@@ -144,7 +144,6 @@ public class MatchDAO {
                 .limit(10); // Limit the results to 10
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
-
 
     private Document createGroupStage(String id) {
         return new Document("$group", new Document("_id", id)
