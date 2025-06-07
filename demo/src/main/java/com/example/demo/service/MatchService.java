@@ -61,12 +61,14 @@ public class MatchService {
         match.setWhiteElo(whiteEloOpt.get());
         match.setBlackElo(blackEloOpt.get());
 
-        // 3) deltaElo calculation (zero clamp)
+        // 3) deltaElo calculation (zero clamp). The deltaElo calculation guarantees
+        // the decrement to be less than or equal to the current elo. However, to be sure,
+        // we clamp the deltaElo to zero.
         List<Integer> deltaElos = new ArrayList<>(PlayerService.calculateNewElo(match));
         if (match.getWhiteElo() + deltaElos.get(0) < 0)
-            deltaElos.set(0, 0);
+            deltaElos.set(0, -match.getWhiteElo());
         if (match.getBlackElo() + deltaElos.get(1) < 0)
-            deltaElos.set(1, 0);
+            deltaElos.set(1, -match.getBlackElo());
 
         // 4) Persistence in MongoDB ( MongoDB Transaction ) ---
         try {
