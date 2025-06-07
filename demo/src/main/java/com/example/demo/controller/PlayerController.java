@@ -23,6 +23,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.demo.service.MatchService;
 
+//todo: delete friend
+//todo: continuare a testare le get
 @RestController
 @RequestMapping("/api/player")
 @Tag(name = "Player Controller", description = "Player operations")
@@ -270,6 +272,7 @@ public class PlayerController extends CommonPlayerAdminController {
         }
 
         try {
+            // Passa solo friendId al Service
             playerService.addFriend(friendId);
             return ResponseEntity.ok("Friend added successfully.");
         } catch (Exception e) {
@@ -296,6 +299,52 @@ public class PlayerController extends CommonPlayerAdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+
+    @Operation(summary = "Recupera il percorso verso i giocatori delle partite giocate")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Percorso recuperato con successo"),
+            @ApiResponse(responseCode = "400", description = "Errore nel recupero del percorso")
+    })
+    @GetMapping("/path_to_played")
+    public ResponseEntity<?> pathToPlayed() {
+        try {
+            return ResponseEntity.ok(playerService.pathToPlayed());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving the path to played matches.");
+        }
+    }
+
+    @Operation(summary = "Recupera il percorso di amici tra 2 giocatori")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Percorso recuperato con successo"),
+            @ApiResponse(responseCode = "400", description = "Errore nel recupero del percorso")
+    })
+    @GetMapping("/path_to_played/{friendId}")
+    public ResponseEntity<?> pathBetween2Player(@PathVariable String friendId) {
+        try {
+            return ResponseEntity.ok(playerService.pathBetween2Player(friendId));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving the path to player.");
+        }
+    }
+
+    @Operation(summary = "Esegue il matchmaking per il giocatore")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Matchmaking eseguito con successo"),
+            @ApiResponse(responseCode = "400", description = "Errore nel matchmaking")
+    })
+    @GetMapping("/matchmaking")
+    public ResponseEntity<?> matchmaking() {
+        try {
+            return ResponseEntity.ok(playerService.matchmaking());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error during matchmaking.");
         }
     }
 }

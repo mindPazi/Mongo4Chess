@@ -7,9 +7,11 @@ import com.example.demo.dao.TournamentDAO;
 import com.example.demo.model.*;
 import com.mongodb.MongoException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.neo4j.driver.exceptions.Neo4jException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -166,6 +168,61 @@ public class PlayerService {
         } catch (Exception e) {
             logger.error("Error getting friend list.", e.getMessage(), e);
             throw new RuntimeException("Error getting friend list.");
+        }
+    }
+
+    public List<String> matchmaking(){
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String playerId = authentication.getName();
+            return playerNodeDAO.matchmaking(playerId);
+        }catch(Exception e){
+            logger.error("Errore durante il matchmaking", e.getMessage(), e);
+            throw new RuntimeException("Errore durante il recupero del matchmaking");
+        }
+    }
+
+    public List<String> pathToPlayed(){
+        try {
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String playerId = authentication.getName();
+
+            List<String> flatPaths = playerNodeDAO.pathToPlayed(playerId);
+
+            List<String> paths = new ArrayList<>();
+            List<String> currentPath = new ArrayList<>();
+
+            for (String node : flatPaths) {
+                if (node.equals(playerId)) {
+                    if (!currentPath.isEmpty()) {
+                        paths.add(String.join(" -> ", currentPath));
+                        currentPath.clear();
+                    }
+                }
+                currentPath.add(node);
+            }
+
+            if (!currentPath.isEmpty()) {
+                paths.add(String.join(" -> ", currentPath));
+            }
+
+            return paths;
+
+        }catch(Exception e){
+            logger.error("Errore durante il recupero del percorso di amici", e.getMessage(), e);
+            throw new RuntimeException("Errore durante il recupero del percorso di amici");
+        }
+    }
+
+    public List<String> pathBetween2Player(String friendId){
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String playerId = authentication.getName();
+            return playerNodeDAO.pathBetween2Player(playerId,friendId);
+        }catch(Exception e){
+            logger.error("Errore durante il recupero del percorso di amici", e.getMessage(), e);
+            throw new RuntimeException("Errore durante il recupero del percorso di amici");
         }
     }
 
