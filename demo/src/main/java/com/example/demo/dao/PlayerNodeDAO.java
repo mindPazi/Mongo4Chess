@@ -20,11 +20,11 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
     Optional<Integer> getElo(@Param("username") String username);
 
     @Query("USE chessDB MATCH (a:PlayerNode {username: $username}) " +
-           "SET a.elo = $elo, a.whiteWins = a.whiteWins + $whiteWins, " +
+           "SET a.elo = a.elo + $deltaElo, a.whiteWins = a.whiteWins + $whiteWins, " +
            "a.blackWins = a.blackWins + $blackWins, a.whiteDraws = a.whiteDraws + $whiteDraws, " +
            "a.blackDraws = a.blackDraws + $blackDraws, a.whiteLosses = a.whiteLosses + $whiteLosses, " +
            "a.blackLosses = a.blackLosses + $blackLosses")
-    void updatePlayerStats(@Param("username") String username, @Param("elo") int elo,
+    void updatePlayerStats(@Param("username") String username, @Param("deltaElo") int deltaElo,
                            @Param("whiteWins") int whiteWins, @Param("blackWins") int blackWins,
                            @Param("whiteDraws") int whiteDraws, @Param("blackDraws") int blackDraws,
                            @Param("whiteLosses") int whiteLosses, @Param("blackLosses") int blackLosses);

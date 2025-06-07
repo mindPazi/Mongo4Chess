@@ -95,6 +95,7 @@ public class PlayerDAO {
         if (matchDocs != null) {
             for (Document matchDoc : matchDocs) {
                 PlayerMatch match = new PlayerMatch();
+                match.set_id(matchDoc.getString("_id"));
                 match.setElo(matchDoc.getInteger("elo"));
                 match.setDate(matchDoc.getDate("date"));
                 matches.add(match);
@@ -181,11 +182,11 @@ public class PlayerDAO {
         mongoTemplate.updateFirst(query, update, "PlayerCollection");
     }
 
-    public void removeMatch(String player, Date date, int elo) {
+    public void removeMatch(String player, String id) {
         // Remove the match from the player's match list
         playerCollection.updateOne(
                 new Document("username", player),
-                new Document("$pull", new Document("matches", new Document("date", date).append("elo", elo)))
+                new Document("$pull", new Document("matches", new Document("_id", id)))
         );
     }
 

@@ -19,24 +19,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminService {
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
     private final AdminDAO adminDAO;
-    private final PlayerService playerService;
     private final TournamentDAO tournamentDAO;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Autowired
-    public AdminService(AdminDAO adminDAO, TournamentDAO tournamentDAO,
-                        PlayerService playerService) {
+    public AdminService(AdminDAO adminDAO, TournamentDAO tournamentDAO) {
         this.adminDAO = adminDAO;
-        this.playerService = playerService;
         this.tournamentDAO = tournamentDAO;
     }
 
     public void updateAdminPassword(String oldPassword, String newPassword) {
-        String currentUsername = null;
         try {
             // Get the admin
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            currentUsername = authentication.getName();
+            String currentUsername = authentication.getName();
 
             // Get the admin from the DB
             Admin admin = adminDAO.getAdmin(currentUsername);

@@ -40,20 +40,20 @@ public class MatchDAO {
         // matchCollection.createIndex(new Document("date", 1));
 
         // Used for the aggregations
-        matchCollection.createIndex(new Document("whiteElo", 1));
-        matchCollection.createIndex(new Document("blackElo", 1));
+        matchCollection.createIndex(new Document("whiteElo", 1).append("blackElo", 1));
+
     }
 
-    public void saveMatch(Match match) {
-        mongoTemplate.save(match, "MatchCollection");
+    public Match saveMatch(Match match) {
+        return mongoTemplate.save(match, "MatchCollection");
     }
 
     public void deleteAllMatches() {
         matchCollection.deleteMany(new Document());
     }
 
-    public void deleteMatch(Match match) {
-        matchCollection.deleteOne(new Document("_id", match.getId()));
+    public void deleteMatch(String matchId) {
+        matchCollection.deleteOne(new Document("_id", matchId));
     }
 
     public void deleteAllMatchesByPlayer(String player) {
@@ -145,7 +145,6 @@ public class MatchDAO {
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
-
     private Document createGroupStage(String id) {
         return new Document("$group", new Document("_id", id)
                 .append("wins_checkmated", createSumCondition("win", "checkmated"))
@@ -205,4 +204,12 @@ public class MatchDAO {
         return resultList;
     }
 
+    public Match getMatch(String id) {
+        Query query = new Query(Criteria.where("_id").is(id));
+        Match match = mongoTemplate.findOne(query, Match.class, "MatchCollection");
+        if (match == null) {
+            throw new RuntimeException("Match not found with id: " + id);
+        }
+        return match;
+    }
 }

@@ -6,7 +6,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
-//todo: vedere se transactional funziona per mongo sulle repliche
 //todo: discutere dello sharding/replication
 //todo: quando gabri ha messo l'id nel playerMatch, sistemare il rollback del match
 //todo: popolare la tournament collection
