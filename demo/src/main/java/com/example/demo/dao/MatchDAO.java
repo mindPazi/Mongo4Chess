@@ -101,16 +101,26 @@ public class MatchDAO {
     }
 
     public List<Document> getMostPlayedOpeningsPerElo(int elomin, int elomax) {
-        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(
+        List<Document> pipeline = Arrays.asList(
                 new Document("$match", new Document("$and", Arrays.asList(
-                        new Document("whiteElo",
-                                new Document("$gte", elomin).append("$lte", elomax)),
-                        new Document("blackElo",
-                                new Document("$gte", elomin).append("$lte", elomax))))),
+                        new Document("whiteElo", new Document("$gte", elomin).append("$lte", elomax)),
+                        new Document("blackElo", new Document("$gte", elomin).append("$lte", elomax))))),
                 new Document("$group", new Document("_id", "$eco")
                         .append("total", new Document("$sum", 1))),
                 new Document("$sort", new Document("total", -1)),
-                new Document("$limit", 10)));
+                new Document("$limit", 10));
+
+        // Esegui explain per ottenere il piano di esecuzione
+        Document explain = matchCollection.aggregate(pipeline)
+                .hint(new Document("whiteElo", 1).append("blackElo", 1))
+                .explain();
+
+        System.out.println("📊 Piano di esecuzione:");
+        System.out.println(explain.toJson());
+
+        // Ora esegui davvero l'aggregazione
+        AggregateIterable<Document> results = matchCollection.aggregate(pipeline)
+                .hint(new Document("whiteElo", 1).append("blackElo", 1));
 
         List<Document> resultList = new ArrayList<>();
         results.into(resultList);
