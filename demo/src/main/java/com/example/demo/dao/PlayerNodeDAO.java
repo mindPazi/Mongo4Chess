@@ -1,5 +1,7 @@
 package com.example.demo.dao;
 
+
+
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,21 +29,76 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
                            @Param("whiteDraws") int whiteDraws, @Param("blackDraws") int blackDraws,
                            @Param("whiteLosses") int whiteLosses, @Param("blackLosses") int blackLosses);
 
+
     @Query("USE chessDB " +
            "MATCH (a:PlayerNode {username: $playerId1}), (b:PlayerNode {username: $playerId2}) " +
-           "MERGE (a)-[:FRIEND]->(b)")
+           "MERGE (a)-[:FRIEND]-(b)")
     void addFriend(String playerId1, String playerId2);
 
     @Query("USE chessDB " +
-           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIEND]->(b:PlayerNode {username: $playerId2}) " +
+           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIEND]-(b:PlayerNode {username: $playerId2}) " +
            "DELETE r " +
            "RETURN COUNT(r)")
     int removeFriend(String playerId1, String playerId2);
 
     @Query("USE chessDB " +
-           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIEND]->(b:PlayerNode) " +
+           "MATCH (a:PlayerNode {username: $playerId1})-[r:FRIEND]-(b:PlayerNode) " +
            "RETURN b")
     List<PlayerNode> getFriends(String playerId1);
+
+    @Query("""
+      USE chessDB
+      MATCH (me:PlayerNode {username: $username})
+      CALL apoc.path.expandConfig(me, {
+            relationshipFilter: "PLAYED",
+            minLevel: 2,
+            maxLevel: 3,
+            uniqueness: "NODE_GLOBAL"
+      }) YIELD path
+      WITH last(nodes(path)) AS other, me, me.elo AS myElo
+      WHERE NOT (me)-[:FRIEND]-(other)
+        AND NOT (me)-[:PLAYED]-(other)
+        AND abs(other.elo - myElo) < 10
+        AND me <> other
+      RETURN other.username AS username
+      ORDER BY abs(other.elo - myElo) ASC
+      LIMIT 5
+      """)
+    List<String> matchmaking(String username);
+
+    @Query("""
+    USE chessDB
+    MATCH (n:PlayerNode {username: $username})-[:PLAYED]-(b:PlayerNode)
+    WHERE NOT (n)-[:FRIEND]-(b)
+    
+    MATCH path = (n)-[:FRIEND*1..4]-(b)
+    WITH b, path
+    ORDER BY length(path) ASC
+    WITH b, COLLECT(path)[0] AS shortestPath
+    LIMIT 5
+    
+    UNWIND nodes(shortestPath) AS node
+    RETURN node.username AS uname
+    """)
+    List<String>pathToPlayed(String username);
+
+    @Query("""
+    MATCH (me:PlayerNode {username: $startingNode}), (target:PlayerNode {username: $endingNode})
+    WHERE NOT (me)-[:FRIEND]-(target)
+    CALL apoc.path.expandConfig(me, {
+        relationshipFilter: "FRIEND",
+        minLevel: 1,
+        maxLevel: 7,
+        uniqueness: "NODE_GLOBAL",
+        terminatorNodes: [target],
+        bfs: true
+        }) YIELD path
+    WITH path
+    UNWIND nodes(path) AS node
+    RETURN node.username AS uname
+    """)
+    List<String>pathBetween2Player(String startingNode, String endingNode);
+
 
     @Query("USE chessDB " + "CREATE (p:PlayerNode {username: $username, elo: $elo, " +
            "blackWins: 0, whiteWins: 0, whiteDraws: 0, blackDraws: 0, " +
