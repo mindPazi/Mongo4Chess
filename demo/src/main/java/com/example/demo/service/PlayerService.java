@@ -263,16 +263,16 @@ public class PlayerService {
 
     // calculated with this formula: https://it.wikipedia.org/wiki/Elo_(scacchi)
     public static List<Integer> calculateNewElo(Match match) {
-        int newWhiteElo, newBlackElo;
+        int deltaWhiteElo, deltaBlackElo;
         double whiteExpectedScore = expectedScore(match.getWhiteElo(), match.getBlackElo());
         double blackExpectedScore = expectedScore(match.getBlackElo(), match.getWhiteElo());
         double whiteScore = match.getResult().equals("1-0") ? 1 : match.getResult().equals("0-1") ? 0 : 0.5;
         double blackScore = 1 - whiteScore;
 
-        newWhiteElo = (int) (match.getWhiteElo() + EloConstant * (whiteScore - whiteExpectedScore));
-        newBlackElo = (int) (match.getBlackElo() + EloConstant * (blackScore - blackExpectedScore));
+        deltaWhiteElo = (int) (EloConstant * (whiteScore - whiteExpectedScore));
+        deltaBlackElo = (int) (EloConstant * (blackScore - blackExpectedScore));
 
-        return List.of(newWhiteElo, newBlackElo);
+        return List.of(deltaWhiteElo, deltaBlackElo);
     }
 
     private static double expectedScore(int myElo, int opponentElo) {
