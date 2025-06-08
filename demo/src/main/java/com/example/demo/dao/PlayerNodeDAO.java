@@ -70,25 +70,24 @@ public interface PlayerNodeDAO extends Neo4jRepository<PlayerNode, UUID> {
     USE chessDB
     MATCH (n:PlayerNode {username: $username})-[:PLAYED]-(b:PlayerNode)
     WHERE NOT (n)-[:FRIEND]-(b)
-    
     MATCH path = (n)-[:FRIEND*1..4]-(b)
     WITH b, path
     ORDER BY length(path) ASC
     WITH b, COLLECT(path)[0] AS shortestPath
     LIMIT 5
-    
     UNWIND nodes(shortestPath) AS node
     RETURN node.username AS uname
     """)
     List<String>pathToPlayed(String username);
 
     @Query("""
+    USE chessDB
     MATCH (me:PlayerNode {username: $startingNode}), (target:PlayerNode {username: $endingNode})
     WHERE NOT (me)-[:FRIEND]-(target)
     CALL apoc.path.expandConfig(me, {
         relationshipFilter: "FRIEND",
         minLevel: 1,
-        maxLevel: 7,
+        maxLevel: 5,
         uniqueness: "NODE_GLOBAL",
         terminatorNodes: [target],
         bfs: true

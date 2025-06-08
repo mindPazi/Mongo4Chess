@@ -3,7 +3,13 @@ package com.example.demo.dao;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Accumulators;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Facet;
+import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.data.domain.Sort;
@@ -14,9 +20,11 @@ import org.springframework.stereotype.Repository;
 import com.example.demo.model.Match;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 import org.springframework.data.mongodb.core.query.Query;
 
+import org.springframework.data.mongodb.core.query.Update;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,18 +38,11 @@ public class MatchDAO {
         MongoDatabase database = mongoClient.getDatabase("chessDB");
         this.matchCollection = database.getCollection("MatchCollection");
 
-        // Essential indexes for most frequent queries
+        // Nuovo indice su whiteElo, blackElo ed eco
+        matchCollection.createIndex(new Document("whiteElo", 1)
+                .append("blackElo", 1)
+                .append("eco", 1));
 
-        // Ricerca per giocatore (sia come bianco che nero)
-        // matchCollection.createIndex(new Document("white", 1));
-        // matchCollection.createIndex(new Document("black", 1));
-
-        // // Ricerca per intervallo di date
-        // matchCollection.createIndex(new Document("date", 1));
-
-        // Used for the aggregations
-        matchCollection.createIndex(new Document("whiteElo", 1));
-        matchCollection.createIndex(new Document("blackElo", 1));
     }
 
     public Match saveMatch(Match match) {
@@ -68,49 +69,69 @@ public class MatchDAO {
     }
 
     public List<Match> getMatchesByPlayer(String player) {
-        Query query = new Query(
-                new Criteria().orOperator(Criteria.where("white").is(player), Criteria.where("black").is(player)));
-        return mongoTemplate.find(query, Match.class, "MatchCollection");
+        Query whiteQuery = new Query(Criteria.where("white").is(player));
+        whiteQuery.withHint("{ white: 1 }");
+
+        Query blackQuery = new Query(Criteria.where("black").is(player));
+        blackQuery.withHint("{ black: 1 }");
+
+        List<Match> whiteMatches = mongoTemplate.find(whiteQuery, Match.class, "MatchCollection");
+        List<Match> blackMatches = mongoTemplate.find(blackQuery, Match.class, "MatchCollection");
+
+        List<Match> allMatches = new ArrayList<>();
+        allMatches.addAll(whiteMatches);
+        allMatches.addAll(blackMatches);
+        return allMatches;
     }
 
     public Document getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
-        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(
-                new Document("$match", new Document("$and", Arrays.asList(
-                        new Document("whiteElo",
-                                new Document("$gte", elomin).append("$lte", elomax)),
-                        new Document("blackElo",
-                                new Document("$gte", elomin).append("$lte", elomax))))),
-                new Document("$group", new Document("_id", "$eco")
-                        .append("total", new Document("$sum", 1))
-                        .append("wins", new Document("$sum",
-                                new Document("$cond", Arrays.asList(
-                                        new Document("$eq",
-                                                Arrays.asList("$result",
-                                                        "1-0")),
-                                        1, 0))))),
-                new Document("$project", new Document("_id", 0)
+        List<Bson> pipeline = Arrays.asList(
+                Aggregates.match(Filters.and(
+                        Filters.gte("whiteElo", elomin),
+                        Filters.lte("whiteElo", elomax),
+                        Filters.gte("blackElo", elomin),
+                        Filters.lte("blackElo", elomax))),
+                Aggregates.project(Projections.fields(
+                        Projections.include("eco", "result"))),
+
+                Aggregates.group("$eco",
+                        Accumulators.sum("total", 1),
+                        Accumulators.sum("wins", new Document("$cond",
+                                Arrays.asList(
+                                        new Document("$in", Arrays.asList("$result", Arrays.asList("1-0", "0-1"))),
+                                        1, 0)))),
+
+                // 🔍 Filtro apertura usata almeno 50 volte
+                Aggregates.match(Filters.gte("total", 5000)),
+
+                Aggregates.project(new Document()
+                        .append("_id", 0)
                         .append("eco", "$_id")
                         .append("total", 1)
-                        .append("winRate",
-                                new Document("$divide",
-                                        Arrays.asList("$wins", "$total")))),
-                new Document("$sort", new Document("winRate", -1)),
-                new Document("$limit", 5)));
+                        .append("winRate", new Document("$divide", Arrays.asList("$wins", "$total")))),
+
+                Aggregates.sort(Sorts.descending("winRate")),
+                Aggregates.limit(1));
+
+        Bson hint = new Document("whiteElo", 1).append("blackElo", 1).append("eco", 1);
+        AggregateIterable<Document> results = matchCollection.aggregate(pipeline).hint(hint);
 
         return results.first();
     }
 
     public List<Document> getMostPlayedOpeningsPerElo(int elomin, int elomax) {
-        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(
+        List<Document> pipeline = Arrays.asList(
                 new Document("$match", new Document("$and", Arrays.asList(
-                        new Document("whiteElo",
-                                new Document("$gte", elomin).append("$lte", elomax)),
-                        new Document("blackElo",
-                                new Document("$gte", elomin).append("$lte", elomax))))),
+                        new Document("whiteElo", new Document("$gte", elomin).append("$lte", elomax)),
+                        new Document("blackElo", new Document("$gte", elomin).append("$lte", elomax))))),
                 new Document("$group", new Document("_id", "$eco")
                         .append("total", new Document("$sum", 1))),
                 new Document("$sort", new Document("total", -1)),
-                new Document("$limit", 10)));
+                new Document("$limit", 10));
+
+        // Ora esegui davvero l'aggregazione
+        AggregateIterable<Document> results = matchCollection.aggregate(pipeline)
+                .hint(new Document("whiteElo", 1).append("blackElo", 1).append("eco", 1));
 
         List<Document> resultList = new ArrayList<>();
         results.into(resultList);
@@ -138,13 +159,16 @@ public class MatchDAO {
     }
 
     public List<Match> getMatchesByElo(int minElo, int maxElo) {
-        Query query = new Query(Criteria.where("whiteElo").gte(minElo).lte(maxElo)
-                .and("blackElo").gte(minElo).lte(maxElo))
-                .with(Sort.by(Sort.Direction.DESC, "date")) // Sort by date in descending order
-                .limit(10); // Limit the results to 10
+        Query query = new Query(
+                Criteria.where("whiteElo").gte(minElo).lte(maxElo)
+                        .and("blackElo").gte(minElo).lte(maxElo))
+                .with(Sort.by(Sort.Direction.DESC, "date"))
+                .limit(10);
+
+        query.withHint(new Document("whiteElo", 1).append("blackElo", 1).append("eco", 1));
+
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
-
 
     private Document createGroupStage(String id) {
         return new Document("$group", new Document("_id", id)
@@ -189,17 +213,35 @@ public class MatchDAO {
     }
 
     public List<Document> getNumOfWinsAndDrawsPerElo(int EloMin, int EloMax) {
-        String EloRange;
-        if (EloMax == Integer.MAX_VALUE) {
-            EloRange = EloMin + "-infinity";
-        } else {
-            EloRange = EloMin + "-" + EloMax;
-        }
-        Bson facetStage = new Document("$facet", new Document()
-                .append(EloRange, Arrays.asList(
-                        createMatchStage(EloMin, EloMax),
-                        createGroupStage(EloRange))));
-        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(facetStage));
+        // Stage di filtro
+        Bson matchStage = Aggregates.match(Filters.and(
+                Filters.gte("whiteElo", EloMin),
+                Filters.lte("whiteElo", EloMax),
+                Filters.gte("blackElo", EloMin),
+                Filters.lte("blackElo", EloMax) // aggiunto per garantire uso indice coprente
+        ));
+
+        // Proiezione: solo il campo result (coperto dall'indice)
+        Bson preGroupProject = Aggregates.project(Projections.include("result"));
+
+        // Raggruppa per "result" (es. "1-0", "0-1", "1/2-1/2") e conta
+        Bson groupStage = Aggregates.group("$result", Accumulators.sum("count", 1));
+
+        // Proietta _id (valore di result) e count
+        Bson projectStage = Aggregates.project(Projections.fields(
+                Projections.include("_id", "count")));
+
+        // ✅ Hint sul nuovo indice coprente
+        Bson hint = new Document("whiteElo", 1)
+                .append("blackElo", 1)
+                .append("eco", 1);
+
+        // Pipeline finale
+        List<Bson> pipeline = List.of(matchStage, preGroupProject, groupStage, projectStage);
+
+        // Esecuzione
+        AggregateIterable<Document> results = matchCollection.aggregate(pipeline).hint(hint);
+
         List<Document> resultList = new ArrayList<>();
         results.into(resultList);
         return resultList;
