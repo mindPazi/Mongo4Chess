@@ -7,6 +7,7 @@ import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Facet;
 import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
@@ -85,24 +86,38 @@ public class MatchDAO {
 
     public Document getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
         List<Bson> pipeline = Arrays.asList(
-                new Document("$match", new Document("$and", Arrays.asList(
-                        new Document("whiteElo", new Document("$gte", elomin).append("$lte", elomax)),
-                        new Document("blackElo", new Document("$gte", elomin).append("$lte", elomax))))),
-                new Document("$group", new Document("_id", "$eco")
-                        .append("total", new Document("$sum", 1))
-                        .append("wins", new Document("$sum",
-                                new Document("$cond", Arrays.asList(
-                                        new Document("$eq", Arrays.asList("$result", "1-0")),
-                                        1, 0))))),
-                new Document("$project", new Document("_id", 0)
+                Aggregates.match(Filters.and(
+                        Filters.gte("whiteElo", elomin),
+                        Filters.lte("whiteElo", elomax),
+                        Filters.gte("blackElo", elomin),
+                        Filters.lte("blackElo", elomax),
+                        Filters.exists("eco", true),
+                        Filters.exists("result", true))),
+
+                Aggregates.project(Projections.fields(
+                        Projections.include("eco", "result"))),
+
+                Aggregates.group("$eco",
+                        Accumulators.sum("total", 1),
+                        Accumulators.sum("wins", new Document("$cond",
+                                Arrays.asList(
+                                        new Document("$in", Arrays.asList("$result", Arrays.asList("1-0", "0-1"))),
+                                        1, 0)))),
+
+                // 🔍 Filtro apertura usata almeno 50 volte
+                Aggregates.match(Filters.gte("total", 5000)),
+
+                Aggregates.project(new Document()
+                        .append("_id", 0)
                         .append("eco", "$_id")
                         .append("total", 1)
                         .append("winRate", new Document("$divide", Arrays.asList("$wins", "$total")))),
-                new Document("$sort", new Document("winRate", -1)),
-                new Document("$limit", 5));
 
-        AggregateIterable<Document> results = matchCollection.aggregate(pipeline)
-                .hint(new Document("whiteElo", 1).append("blackElo", 1).append("eco", 1));
+                Aggregates.sort(Sorts.descending("winRate")),
+                Aggregates.limit(1));
+
+        Bson hint = new Document("whiteElo", 1).append("blackElo", 1).append("eco", 1);
+        AggregateIterable<Document> results = matchCollection.aggregate(pipeline).hint(hint);
 
         return results.first();
     }
