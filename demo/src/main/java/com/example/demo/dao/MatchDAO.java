@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 import com.example.demo.model.Match;
+import com.mongodb.client.model.Field;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -42,7 +43,6 @@ public class MatchDAO {
         matchCollection.createIndex(new Document("whiteElo", 1)
                 .append("blackElo", 1)
                 .append("eco", 1));
-
     }
 
     public Match saveMatch(Match match) {
@@ -84,39 +84,77 @@ public class MatchDAO {
         return allMatches;
     }
 
-    public Document getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
+    public List<Document> getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
         List<Bson> pipeline = Arrays.asList(
+
+                // 1️⃣ Filtro su elo
                 Aggregates.match(Filters.and(
                         Filters.gte("whiteElo", elomin),
                         Filters.lte("whiteElo", elomax),
                         Filters.gte("blackElo", elomin),
-                        Filters.lte("blackElo", elomax))),
-                Aggregates.project(Projections.fields(
-                        Projections.include("eco", "result"))),
+                        Filters.lte("blackElo", elomax)
+                )),
 
-                Aggregates.group("$eco",
-                        Accumulators.sum("total", 1),
-                        Accumulators.sum("wins", new Document("$cond",
-                                Arrays.asList(
-                                        new Document("$in", Arrays.asList("$result", Arrays.asList("1-0", "0-1"))),
-                                        1, 0)))),
+                // 2️⃣ Conteggio partite totali e grouping per eco
+                Aggregates.facet(
+                        new Facet("totalGames", Aggregates.count("count")),
+                        new Facet("byEco", Arrays.asList(
+                                Aggregates.project(Projections.fields(
+                                        Projections.include("eco", "result")
+                                )),
+                                Aggregates.group("$eco",
+                                        Accumulators.sum("total", 1),
+                                        Accumulators.sum("wins", new Document("$cond",
+                                                Arrays.asList(
+                                                        new Document("$in", Arrays.asList("$result", Arrays.asList("1-0", "0-1"))),
+                                                        1,
+                                                        0
+                                                )
+                                        ))
+                                )
+                        ))
+                ),
 
-                // 🔍 Filtro apertura usata almeno 50 volte
-                Aggregates.match(Filters.gte("total", 5000)),
-
+                // 3️⃣ Merge dei risultati
                 Aggregates.project(new Document()
-                        .append("_id", 0)
-                        .append("eco", "$_id")
-                        .append("total", 1)
-                        .append("winRate", new Document("$divide", Arrays.asList("$wins", "$total")))),
+                        .append("totalGames", new Document("$arrayElemAt", Arrays.asList("$totalGames.count", 0)))
+                        .append("byEco", "$byEco")
+                ),
 
+                // 4️⃣ Unwind
+                Aggregates.unwind("$byEco"),
+
+                // 5️⃣ Aggiunta dei campi da byEco
+                Aggregates.addFields(
+                        new Field<>("eco", "$byEco._id"),
+                        new Field<>("total", "$byEco.total"),
+                        new Field<>("wins", "$byEco.wins"),
+                        new Field<>("percentage", new Document("$divide", Arrays.asList("$byEco.total", "$totalGames")))
+                ),
+
+                // 6️⃣ Filtro: presenza almeno in x% (es. 5%)
+                Aggregates.match(Filters.gte("percentage", 0.05)),
+
+                // 7️⃣ Calcolo winRate
+                Aggregates.addFields(new Field<>("winRate", new Document("$divide", Arrays.asList("$wins", "$total")))),
+
+                // 8️⃣ Proiezione finale con % di presenza
+                Aggregates.project(Projections.fields(
+                        Projections.excludeId(),
+                        Projections.include("eco", "total", "winRate", "percentage")
+                )),
+
+                // 9️⃣ Ordinamento e limite
                 Aggregates.sort(Sorts.descending("winRate")),
-                Aggregates.limit(1));
+                Aggregates.limit(5)
+        );
 
         Bson hint = new Document("whiteElo", 1).append("blackElo", 1).append("eco", 1);
         AggregateIterable<Document> results = matchCollection.aggregate(pipeline).hint(hint);
 
-        return results.first();
+        List<Document> resultList = new ArrayList<>();
+        results.into(resultList);
+        return resultList;
     }
 
     public List<Document> getMostPlayedOpeningsPerElo(int elomin, int elomax) {
@@ -170,6 +208,68 @@ public class MatchDAO {
         return mongoTemplate.find(query, Match.class, "MatchCollection");
     }
 
+
+    public List<Document> getNumOfWinsAndDrawsPerElo(int EloMin, int EloMax) {
+        // Stage di filtro
+        Bson matchStage = Aggregates.match(Filters.and(
+                Filters.gte("whiteElo", EloMin),
+                Filters.lte("whiteElo", EloMax),
+                Filters.gte("blackElo", EloMin),
+                Filters.lte("blackElo", EloMax) // aggiunto per garantire uso indice coprente
+        ));
+
+        // Proiezione: solo il campo result (coperto dall'indice)
+        Bson preGroupProject = Aggregates.project(Projections.include("result"));
+
+        // Raggruppa per "result" (es. "1-0", "0-1", "1/2-1/2") e conta
+        Bson groupStage = Aggregates.group("$result", Accumulators.sum("count", 1));
+
+        // Proietta _id (valore di result) e count
+        Bson projectStage = Aggregates.project(Projections.fields(
+                Projections.include("_id", "count")));
+
+        // ✅ Hint sul nuovo indice coprente
+        Bson hint = new Document("whiteElo", 1)
+                .append("blackElo", 1).append("eco",1);
+
+        // Pipeline finale
+        List<Bson> pipeline = List.of(matchStage, preGroupProject, groupStage, projectStage);
+
+        // Esecuzione
+        AggregateIterable<Document> results = matchCollection.aggregate(pipeline).hint(hint);
+
+        List<Document> resultList = new ArrayList<>();
+        results.into(resultList);
+        return resultList;
+    }
+
+//    public List<Document> getNumOfWinsAndDrawsPerElo(int EloMin, int EloMax) {
+//        String EloRange;
+//        if (EloMax == Integer.MAX_VALUE) {
+//            EloRange = EloMin + "-infinity";
+//        } else {
+//            EloRange = EloMin + "-" + EloMax;
+//        }
+//        Bson facetStage = new Document("$facet", new Document()
+//                .append(EloRange, Arrays.asList(
+//                        createMatchStage(EloMin, EloMax),
+//                        createGroupStage(EloRange))));
+//        // ✅ Hint sul nuovo indice coprente
+//        Bson hint = new Document("reason", 1)
+//                .append("whiteElo", 1)
+//                .append("blackElo", 1);
+//        AggregateIterable<Document> results = matchCollection.aggregate(Arrays.asList(facetStage)).hint(hint);
+//        List<Document> resultList = new ArrayList<>();
+//        results.into(resultList);
+//        return resultList;
+//    }
+
+    private Document createMatchStage(int EloMin, int EloMax) {
+        return new Document("$match", new Document("$and", Arrays.asList(
+                new Document("whiteElo", new Document("$gt", EloMin).append("$lte", EloMax)),
+                new Document("blackElo", new Document("$gt", EloMin).append("$lte", EloMax)))));
+    }
+
     private Document createGroupStage(String id) {
         return new Document("$group", new Document("_id", id)
                 .append("wins_checkmated", createSumCondition("win", "checkmated"))
@@ -206,53 +306,4 @@ public class MatchDAO {
         }
     }
 
-    private Document createMatchStage(int EloMin, int EloMax) {
-        return new Document("$match", new Document("$and", Arrays.asList(
-                new Document("whiteElo", new Document("$gt", EloMin).append("$lte", EloMax)),
-                new Document("blackElo", new Document("$gt", EloMin).append("$lte", EloMax)))));
-    }
-
-    public List<Document> getNumOfWinsAndDrawsPerElo(int EloMin, int EloMax) {
-        // Stage di filtro
-        Bson matchStage = Aggregates.match(Filters.and(
-                Filters.gte("whiteElo", EloMin),
-                Filters.lte("whiteElo", EloMax),
-                Filters.gte("blackElo", EloMin),
-                Filters.lte("blackElo", EloMax) // aggiunto per garantire uso indice coprente
-        ));
-
-        // Proiezione: solo il campo result (coperto dall'indice)
-        Bson preGroupProject = Aggregates.project(Projections.include("result"));
-
-        // Raggruppa per "result" (es. "1-0", "0-1", "1/2-1/2") e conta
-        Bson groupStage = Aggregates.group("$result", Accumulators.sum("count", 1));
-
-        // Proietta _id (valore di result) e count
-        Bson projectStage = Aggregates.project(Projections.fields(
-                Projections.include("_id", "count")));
-
-        // ✅ Hint sul nuovo indice coprente
-        Bson hint = new Document("whiteElo", 1)
-                .append("blackElo", 1)
-                .append("eco", 1);
-
-        // Pipeline finale
-        List<Bson> pipeline = List.of(matchStage, preGroupProject, groupStage, projectStage);
-
-        // Esecuzione
-        AggregateIterable<Document> results = matchCollection.aggregate(pipeline).hint(hint);
-
-        List<Document> resultList = new ArrayList<>();
-        results.into(resultList);
-        return resultList;
-    }
-
-    public Match getMatch(String id) {
-        Query query = new Query(Criteria.where("_id").is(id));
-        Match match = mongoTemplate.findOne(query, Match.class, "MatchCollection");
-        if (match == null) {
-            throw new RuntimeException("Match not found with id: " + id);
-        }
-        return match;
-    }
 }

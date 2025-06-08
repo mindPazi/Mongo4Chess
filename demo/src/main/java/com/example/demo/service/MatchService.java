@@ -127,7 +127,7 @@ public class MatchService {
         return matchDAO.getMatchesByPlayer(player);
     }
 
-    public Document getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
+    public List<Document> getOpeningWithHigherWinRatePerElo(int elomin, int elomax) {
         return matchDAO.getOpeningWithHigherWinRatePerElo(elomin, elomax);
     }
 

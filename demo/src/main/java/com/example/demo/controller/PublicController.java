@@ -78,7 +78,7 @@ public class PublicController {
     public ResponseEntity<?> getOpeningWithHigherWinRatePerElo(@PathVariable int eloMin,
                                                                @PathVariable int eloMax) {
         try {
-            Document openingWithHigherWinRate = matchService.getOpeningWithHigherWinRatePerElo(eloMin, eloMax);
+            List<Document> openingWithHigherWinRate = matchService.getOpeningWithHigherWinRatePerElo(eloMin, eloMax);
             return ResponseEntity.ok(openingWithHigherWinRate);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
