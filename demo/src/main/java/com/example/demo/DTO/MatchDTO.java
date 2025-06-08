@@ -23,9 +23,6 @@ public class MatchDTO {
     @NotBlank(message = "The result is mandatory (e.g., 1-0, 1/2-1/2, 0-1)")
     private String result;
 
-    @NotBlank(message = "The time control is mandatory (e.g., 10, 120)")
-    private String timeControl;
-
     @NotBlank(message = "The ECO is mandatory")
     private String eco;
 

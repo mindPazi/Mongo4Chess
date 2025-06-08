@@ -3,6 +3,7 @@ import com.example.demo.dao.MatchDAO;
 import com.example.demo.dao.PlayerDAO;
 import com.example.demo.model.Match;
 import com.example.demo.model.PlayerMatch;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +30,12 @@ public class MongoTransactionService {
         savedMatch = matchDAO.saveMatch(match); // Save the Match document
         logger.debug("Match saved in matchDAO.");
 
+        // Convert String to ObjectId
+        ObjectId matchObjectId = new ObjectId(savedMatch.getId());
+
         // Adding Matches to Players in MongoDB
-        PlayerMatch whitePlayerMatch = new PlayerMatch(match.getWhiteElo(), match.getDate(), savedMatch.getId());
-        PlayerMatch blackPlayerMatch = new PlayerMatch(match.getBlackElo(), match.getDate(), savedMatch.getId());
+        PlayerMatch whitePlayerMatch = new PlayerMatch(match.getWhiteElo(), match.getDate(), matchObjectId);
+        PlayerMatch blackPlayerMatch = new PlayerMatch(match.getBlackElo(), match.getDate(), matchObjectId);
 
         playerDAO.addMatch(match.getWhite(), whitePlayerMatch);
         logger.debug("Match added to white player in MongoDB.");
@@ -49,9 +53,11 @@ public class MongoTransactionService {
             matchDAO.deleteMatch(savedMatch.getId());
             logger.debug("Match with ID {} removed from matchDAO (compensation).", savedMatch.getId());
 
+            ObjectId matchObjectId = new ObjectId(savedMatch.getId());
+
             // Match removed from player's document
-            playerDAO.removeMatch(match.getWhite(), savedMatch.getId());
-            playerDAO.removeMatch(match.getBlack(), savedMatch.getId());
+            playerDAO.removeMatch(match.getWhite(), matchObjectId);
+            playerDAO.removeMatch(match.getBlack(), matchObjectId);
             logger.debug("Match with ID {} removed from players in MongoDB (compensation).", savedMatch.getId());
             logger.info("MongoDB compensation for match ID {} completed.", savedMatch.getId());
         } catch (Exception e) {

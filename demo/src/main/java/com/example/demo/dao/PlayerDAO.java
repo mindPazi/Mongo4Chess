@@ -6,6 +6,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -95,7 +96,7 @@ public class PlayerDAO {
         if (matchDocs != null) {
             for (Document matchDoc : matchDocs) {
                 PlayerMatch match = new PlayerMatch();
-                match.set_id(matchDoc.getString("_id"));
+                match.set_id(matchDoc.getObjectId("_id"));
                 match.setElo(matchDoc.getInteger("elo"));
                 match.setDate(matchDoc.getDate("date"));
                 matches.add(match);
@@ -182,7 +183,7 @@ public class PlayerDAO {
         mongoTemplate.updateFirst(query, update, "PlayerCollection");
     }
 
-    public void removeMatch(String player, String id) {
+    public void removeMatch(String player, ObjectId id) {
         // Remove the match from the player's match list
         playerCollection.updateOne(
                 new Document("username", player),
