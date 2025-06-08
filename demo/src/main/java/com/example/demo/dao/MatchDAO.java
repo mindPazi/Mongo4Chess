@@ -90,10 +90,7 @@ public class MatchDAO {
                         Filters.gte("whiteElo", elomin),
                         Filters.lte("whiteElo", elomax),
                         Filters.gte("blackElo", elomin),
-                        Filters.lte("blackElo", elomax),
-                        Filters.exists("eco", true),
-                        Filters.exists("result", true))),
-
+                        Filters.lte("blackElo", elomax))),
                 Aggregates.project(Projections.fields(
                         Projections.include("eco", "result"))),
 
@@ -221,11 +218,10 @@ public class MatchDAO {
                 Filters.gte("whiteElo", EloMin),
                 Filters.lte("whiteElo", EloMax),
                 Filters.gte("blackElo", EloMin),
-                Filters.lte("blackElo", EloMax),
-                Filters.exists("eco", true) // per sfruttare tutto l'indice
+                Filters.lte("blackElo", EloMax) // aggiunto per garantire uso indice coprente
         ));
 
-        // Limita i campi letti al solo "result"
+        // Proiezione: solo il campo result (coperto dall'indice)
         Bson preGroupProject = Aggregates.project(Projections.include("result"));
 
         // Raggruppa per "result" (es. "1-0", "0-1", "1/2-1/2") e conta
@@ -235,10 +231,12 @@ public class MatchDAO {
         Bson projectStage = Aggregates.project(Projections.fields(
                 Projections.include("_id", "count")));
 
-        // Hint per usare l'indice corretto
-        Bson hint = new Document("whiteElo", 1).append("blackElo", 1).append("eco", 1);
+        // ✅ Hint sul nuovo indice coprente
+        Bson hint = new Document("whiteElo", 1)
+                .append("blackElo", 1)
+                .append("eco", 1);
 
-        // Pipeline finale senza facet
+        // Pipeline finale
         List<Bson> pipeline = List.of(matchStage, preGroupProject, groupStage, projectStage);
 
         // Esecuzione
