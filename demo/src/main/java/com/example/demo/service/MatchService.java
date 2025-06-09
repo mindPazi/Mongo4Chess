@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-
 @Service
 
 public class MatchService {
@@ -31,46 +30,40 @@ public class MatchService {
     private final MongoTransactionService mongoTransactionService;
     private final Neo4jTransactionService neo4jTransactionService;
 
-    public MatchService(MatchDAO matchDAO, PlayerNodeDAO playerNodeDAO, PlayerDAO playerDAO,  MongoTransactionService mongoTransactionService,
-    Neo4jTransactionService neo4jTransactionService) {
+    public MatchService(MatchDAO matchDAO, PlayerNodeDAO playerNodeDAO, PlayerDAO playerDAO,
+            MongoTransactionService mongoTransactionService,
+            Neo4jTransactionService neo4jTransactionService) {
         this.matchDAO = matchDAO;
         this.playerNodeDAO = playerNodeDAO;
         this.playerDAO = playerDAO;
-        this.mongoTransactionService=mongoTransactionService;
-        this.neo4jTransactionService=neo4jTransactionService;
+        this.mongoTransactionService = mongoTransactionService;
+        this.neo4jTransactionService = neo4jTransactionService;
     }
 
     public void saveMatch(Match match) throws Exception {
-        // 1) Basic validations
         if (match.getWhite().equals(match.getBlack())) {
             throw new IllegalArgumentException("A player " +
-                                               "cannot play with themselves ! ");
+                    "cannot play with themselves ! ");
         }
         if (!List.of("1-0", "0-1", "1/2-1/2").contains(match.getResult())) {
             throw new IllegalArgumentException(" Invalid result : " + match.getResult());
         }
 
-        // 2) Getting the actual elo from the node in Neo4j
         Optional<Integer> whiteEloOpt = playerNodeDAO.getElo(match.getWhite());
         Optional<Integer> blackEloOpt = playerNodeDAO.getElo(match.getBlack());
         if (whiteEloOpt.isEmpty() || blackEloOpt.isEmpty()) {
-        // This scenario could indicate a synchronization error or that the players were not created correctly .
-        logger.error("One or both players do not exist in Neo4j. Cannot proceed.");
-        throw new Exception("One or both players do not exist. Cannot proceed.");
+            logger.error("One or both players do not exist in Neo4j. Cannot proceed.");
+            throw new Exception("One or both players do not exist. Cannot proceed.");
         }
         match.setWhiteElo(whiteEloOpt.get());
         match.setBlackElo(blackEloOpt.get());
 
-        // 3) deltaElo calculation (zero clamp). The deltaElo calculation guarantees
-        // the decrement to be less than or equal to the current elo. However, to be sure,
-        // we clamp the deltaElo to zero.
         List<Integer> deltaElos = new ArrayList<>(PlayerService.calculateNewElo(match));
         if (match.getWhiteElo() + deltaElos.get(0) < 0)
             deltaElos.set(0, -match.getWhiteElo());
         if (match.getBlackElo() + deltaElos.get(1) < 0)
             deltaElos.set(1, -match.getBlackElo());
 
-        // 4) Persistence in MongoDB ( MongoDB Transaction ) ---
         try {
             mongoTransactionService.persistMatchInMongo(match);
         } catch (Exception e) {
@@ -78,11 +71,9 @@ public class MatchService {
             throw new RuntimeException("Error saving match");
         }
 
-        // 5) Neo4j Update ( Neo4j Transaction ) ---
         try {
             neo4jTransactionService.updateNeo4jStatsAndRelations(match, deltaElos);
         } catch (Neo4jException e) {
-            // If Neo4j fails, MongoDB compensation
             mongoTransactionService.compensateMongoMatchSave(match);
             logger.error("Error updating Neo4j. Rolling back in MongoDB.", e);
             throw new RuntimeException("Error saving match");
@@ -91,10 +82,11 @@ public class MatchService {
         logger.info("Match successfully saved in MongoDB and Neo4j.");
     }
 
-
     // Matches are deleted in both player and match collections.
-    // The idea is to lighten the load on the player's document by deleting older matches.
-    // If the admin needs to delete all of a player's matches for some reason (perhaps due to a ban),
+    // The idea is to lighten the load on the player's document by deleting older
+    // matches.
+    // If the admin needs to delete all of a player's matches for some reason
+    // (perhaps due to a ban),
     // they are kept in the opponents' match list (for their elo trend).
     // Statistics on the graph are kept instead.
     @Transactional("mongoTransactionManager")
