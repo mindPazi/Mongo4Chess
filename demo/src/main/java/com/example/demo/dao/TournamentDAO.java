@@ -6,6 +6,8 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -18,6 +20,9 @@ import java.util.List;
 @Repository
 public class TournamentDAO {
     private final MongoTemplate mongoTemplate;
+    @Autowired
+    @Qualifier("primaryReadMongoTemplate")
+    private MongoTemplate primaryMongoTemplate;
 
     public TournamentDAO(MongoTemplate mongoTemplate, MongoClient mongoClient) {
         this.mongoTemplate = mongoTemplate;
@@ -89,7 +94,7 @@ public class TournamentDAO {
 
     public Tournament getTournament(String tournamentId) {
         try{
-            Tournament tournament = mongoTemplate.findById(tournamentId, Tournament.class, "TournamentCollection");
+            Tournament tournament = primaryMongoTemplate.findById(tournamentId, Tournament.class, "TournamentCollection");
             if (tournament == null) {
                 throw new IllegalArgumentException("Tournament with ID " + tournamentId + " does not exist");
             }
