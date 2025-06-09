@@ -282,4 +282,18 @@ public class PlayerService {
     public List<PlayerTournament> getMyTournaments(String playerId) {
         return playerDAO.getMyTournaments(playerId);
     }
+
+    public void encryptAllPasswordsOnce() {
+        List<Player> players = playerDAO.getAllPlayers();
+
+        for (Player player : players) {
+            String password = player.getPassword();
+
+            if (!password.startsWith("$2a$")) {
+                player.setPassword(encoder.encode(password));
+                playerDAO.modifyPassword(player.getUsername(), player.getPassword());
+            }
+        }
+    }
 }
+

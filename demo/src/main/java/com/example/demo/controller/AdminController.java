@@ -222,4 +222,16 @@ public class AdminController extends CommonPlayerAdminController {
     public ResponseEntity<String> addMatchToTournament(@PathVariable String tournamentId, @RequestBody List<TournamentMatchDTO> tournamentMatchDTOs) {
         return super.addMatchToTournament(tournamentId, tournamentMatchDTOs);
     }
+
+    @Operation(summary = "Crypt passwords", description = "Crypt passwords")
+    @PutMapping("CryptPasswords")
+    public ResponseEntity<String> cryptPasswords() {
+        try {
+            playerService.encryptAllPasswordsOnce();
+            return ResponseEntity.ok("Passwords crypted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 }

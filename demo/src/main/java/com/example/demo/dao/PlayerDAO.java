@@ -7,10 +7,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -30,6 +32,16 @@ public class PlayerDAO {
         this.playerCollection.createIndex(
                 new Document("username", 1),
                 new com.mongodb.client.model.IndexOptions().unique(true));
+    }
+
+    public List<Player> getAllPlayers() {
+        List<Document> players = playerCollection.find().into(new ArrayList<>());
+        List<Player> playerList = new ArrayList<>();
+        for (Document doc : players) {
+            Player player = convertDocumentToPlayer(doc);
+            playerList.add(player);
+        }
+        return playerList;
     }
 
     public void createPlayer(String username, String password) {
@@ -206,5 +218,12 @@ public class PlayerDAO {
                 new Document("matches.date", new Document("$lt", date)),
                 new Document("$pull", new Document("matches",
                         new Document("date", new Document("$lt", date)))));
+    }
+
+    public void modifyPassword(String username, String password) {
+        playerCollection.updateOne(
+                new Document("username", username),
+                new Document("$set", new Document("password", password))
+        );
     }
 }
