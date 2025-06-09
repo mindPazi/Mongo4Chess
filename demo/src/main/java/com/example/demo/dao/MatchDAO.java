@@ -69,10 +69,8 @@ public class MatchDAO {
 
         public List<Match> getMatchesByPlayer(String player) {
                 Query whiteQuery = new Query(Criteria.where("white").is(player));
-                whiteQuery.withHint("{ white: 1 }");
 
                 Query blackQuery = new Query(Criteria.where("black").is(player));
-                blackQuery.withHint("{ black: 1 }");
 
                 List<Match> whiteMatches = mongoTemplate.find(whiteQuery, Match.class, "MatchCollection");
                 List<Match> blackMatches = mongoTemplate.find(blackQuery, Match.class, "MatchCollection");
